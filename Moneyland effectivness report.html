@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promo KPI Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --bg:#0e0f11;--surface:#16181c;--surface2:#1e2126;--border:#2a2d34;--border2:#363a43;
+  --text:#e8eaf0;--muted:#7a7f8e;--dim:#4a4f5c;
+  --blue:#4f8ef7;--blue-dim:#1a2d52;--blue-text:#a8c4fc;
+  --green:#3ecf78;--green-dim:#0f3320;
+  --amber:#f5a623;--amber-dim:#3a2200;--amber-text:#ffc96b;
+  --coral:#ff6b5b;--coral-dim:#3a1510;--coral-text:#ffaa9e;
+  --cmp-dashed:#2a3f6a;
+}
+:root.light{
+  --bg:#f4f5f7;--surface:#ffffff;--surface2:#f0f1f4;--border:#dde0e8;--border2:#c8ccd6;
+  --text:#1a1c22;--muted:#6b7080;--dim:#a0a5b5;
+  --blue:#2563eb;--blue-dim:#dbeafe;--blue-text:#1d4ed8;
+  --green:#16a34a;--green-dim:#dcfce7;
+  --amber:#d97706;--amber-dim:#fef3c7;--amber-text:#92400e;
+  --coral:#dc2626;--coral-dim:#fee2e2;--coral-text:#991b1b;
+  --cmp-dashed:#93c5fd;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;line-height:1.6}
+.app{max-width:1260px;margin:0 auto;padding:0 24px 100px}
+header{padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.header-left h1{font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1.15}
+.header-left h1 span{color:var(--blue)}
+.header-left p{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);margin-top:5px;letter-spacing:.04em}
+.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:500;padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .15s;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-primary:hover{background:#3a7ef5}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--muted);border-color:var(--border2)}
+.btn-ghost:hover{color:var(--text);background:var(--surface2)}
+.btn-add{background:transparent;color:var(--blue-text);border:1px dashed var(--cmp-dashed);border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-add:hover{background:var(--blue-dim);border-color:var(--blue)}
+.section-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+.entry-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.entry-toolbar-left{display:flex;align-items:center;gap:8px}
+.period-count{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim)}
+.periods-grid{display:grid;gap:12px;margin-bottom:32px}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:border-color .15s;position:relative}
+.pcard:hover{border-color:var(--border2)}
+.pcard:focus-within{border-color:var(--blue)}
+.pcard-top{padding:9px 12px 7px;border-bottom:1px solid var(--border)}
+.pcard-name-row{display:flex;align-items:center;gap:6px}
+.pcard-num{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:500;letter-spacing:.08em;padding:3px 7px;border-radius:4px;display:inline-block;flex-shrink:0;min-width:26px;text-align:center}
+.pcard-name-input{flex:1;background:transparent;border:none;border-bottom:1px solid var(--border2);color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:600;padding:3px 4px;outline:none;transition:border-color .12s;min-width:0}
+.pcard-name-input:focus{border-bottom-color:var(--blue)}
+.pcard-name-input::placeholder{color:var(--dim)}
+.pcard-remove{background:none;border:none;cursor:pointer;color:var(--dim);padding:3px;border-radius:4px;display:flex;align-items:center;transition:all .12s;flex-shrink:0}
+.pcard-remove:hover{color:var(--coral);background:var(--coral-dim)}
+.pcard-remove:disabled{opacity:.25;cursor:not-allowed;pointer-events:none}
+.pcard-dates{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:7px 12px 4px}
+.pcard-fields{padding:2px 12px 10px;display:flex;flex-direction:column;gap:4px}
+.field-row{display:flex;align-items:center;gap:6px}
+.field-row label{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:var(--muted);min-width:88px;flex-shrink:0;letter-spacing:0}
+.field-row input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:5px 8px;width:100%;transition:border-color .12s}
+.field-row input[data-numeric]{text-align:right;letter-spacing:.02em}
+.field-row input::-webkit-outer-spin-button,.field-row input::-webkit-inner-spin-button{-webkit-appearance:none}
+.field-row input[type=date]{font-size:9px}
+.field-row input:focus{outline:none;border-color:var(--blue)}
+.field-row input::placeholder{color:var(--dim)}
+.field-row input[readonly]{color:var(--blue-text);background:var(--blue-dim);border-color:transparent;cursor:default}
+.auto-tag{font-family:'IBM Plex Mono',monospace;font-size:8px;color:var(--blue-text);background:var(--blue-dim);padding:1px 4px;border-radius:3px;letter-spacing:.04em;flex-shrink:0}
+.date-label{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;color:var(--dim);letter-spacing:.03em;text-transform:uppercase;margin-bottom:2px;display:block}
+.date-field{display:flex;flex-direction:column}
+.date-field input{font-size:11px;padding:5px 7px}
+.preview-grid{display:grid;gap:10px}
+.preview-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px}
+.preview-card .badge{font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:4px;display:inline-block;margin-bottom:7px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview-card .metric{display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;border-bottom:1px solid var(--border)}
+.preview-card .metric:last-child{border-bottom:none}
+.preview-card .metric .mlbl{color:var(--muted);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif}
+.preview-card .metric .mval{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text)}
+.delta-section{margin-bottom:28px}
+.comparisons-list{display:flex;flex-direction:column;gap:10px}
+.comparison-row{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.comparison-header{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface2);flex-wrap:wrap}
+.comparison-selects{display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap}
+.comparison-selects select{background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:5px 8px;cursor:pointer;outline:none;transition:border-color .12s}
+.comparison-selects select:focus{border-color:var(--blue)}
+.comparison-selects .vs-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--dim);flex-shrink:0}
+.comparison-remove-btn{background:none;border:none;cursor:pointer;color:var(--dim);padding:4px;border-radius:4px;display:flex;align-items:center;transition:all .12s;margin-left:auto;flex-shrink:0}
+.comparison-remove-btn:hover{color:var(--coral);background:var(--coral-dim)}
+.delta-table{width:100%;border-collapse:collapse;font-size:12px}
+.delta-table th{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;color:var(--dim);text-align:right;padding:8px 13px;letter-spacing:.02em;border-bottom:1px solid var(--border)}
+.delta-table th:first-child{text-align:left}
+.delta-table td{padding:7px 13px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:12px;border-bottom:1px solid var(--border);color:var(--muted)}
+.delta-table td:first-child{text-align:left;color:var(--text);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:500}
+.delta-table tr:last-child td{border-bottom:none}
+.delta-table tr:hover td{background:var(--surface2)}
+.add-comparison-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px dashed var(--cmp-dashed);border-radius:8px;color:var(--blue-text);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:7px 14px;cursor:pointer;transition:all .15s;margin-top:8px}
+.add-comparison-btn:hover{background:var(--blue-dim);border-color:var(--blue)}
+.up{color:var(--green)!important}
+.dn{color:var(--coral)!important}
+.na{color:var(--dim)!important}
+.footer-bar{position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--border);padding:14px 0;margin-top:20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.status-msg{font-family:'IBM Plex Mono',monospace;font-size:11px}
+.status-ok{color:var(--green)}
+.status-err{color:var(--coral)}
+.tabs{display:flex;gap:2px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:3px;margin-bottom:22px;width:fit-content}
+.tab{font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:500;padding:7px 15px;border-radius:6px;cursor:pointer;color:var(--muted);border:none;background:none;transition:all .12s}
+.tab.active{background:var(--surface2);color:var(--text);border:1px solid var(--border2)}
+.tab:hover:not(.active){color:var(--text)}
+.panel{display:none}
+.panel.active{display:block}
+.tag-live{font-family:'IBM Plex Mono',monospace;font-size:8px;background:var(--green-dim);color:var(--green);padding:1px 5px;border-radius:3px;letter-spacing:.06em;vertical-align:middle;margin-left:4px}
+svg.icon{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-2px}
+.findings-grid{display:flex;flex-direction:column;gap:8px}
+.finding{display:flex;gap:12px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.finding-icon{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.finding-icon.ok{background:var(--green-dim);color:var(--green)}
+.finding-icon.warn{background:var(--amber-dim);color:var(--amber-text)}
+.finding-icon.bad{background:var(--coral-dim);color:var(--coral)}
+.finding-icon.info{background:var(--blue-dim);color:var(--blue-text)}
+.finding-body{flex:1;min-width:0}
+.finding-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.finding-desc{font-size:12px;color:var(--muted);line-height:1.7;font-family:'Plus Jakarta Sans',sans-serif}
+.finding-desc .hi{color:var(--text)}
+.finding-desc .hi-up{color:var(--green)}
+.finding-desc .hi-dn{color:var(--coral)}
+.no-data-msg{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);padding:16px 0}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px}
+@media(max-width:760px){.charts-grid{grid-template-columns:1fr}}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.chart-card-title{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+.chart-wrap{position:relative;width:100%}
+.chart-wrap-h220{height:220px}
+.chart-wrap-h180{height:180px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.chart-legend-item{display:flex;align-items:center;gap:5px;font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;color:var(--muted)}
+.chart-legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.chart-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.chart-card-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:0}
+.chart-type-btns{display:flex;gap:3px}
+.chart-type-btn{background:none;border:1px solid var(--border);border-radius:5px;color:var(--dim);font-family:'Plus Jakarta Sans',sans-serif;font-size:10px;font-weight:500;padding:3px 8px;cursor:pointer;transition:all .12s}
+.chart-type-btn.active{background:var(--blue-dim);border-color:var(--blue);color:var(--blue-text)}
+.chart-type-btn:hover:not(.active){background:var(--surface2);color:var(--text)}
+.summary-banner{border-radius:12px;padding:18px 22px;margin-bottom:26px;display:flex;align-items:center;gap:16px;border:1px solid transparent}
+.summary-banner.ok{background:var(--green-dim);border-color:var(--green)}
+.summary-banner.warn{background:var(--amber-dim);border-color:var(--amber)}
+.summary-banner.bad{background:var(--coral-dim);border-color:var(--coral)}
+.summary-banner-icon{font-size:24px;flex-shrink:0}
+.summary-banner-label{font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:3px}
+.summary-banner-label.ok{color:var(--green)}
+.summary-banner-label.warn{color:var(--amber)}
+.summary-banner-label.bad{color:var(--coral)}
+.summary-banner-text{font-size:15px;font-weight:500;color:var(--text);line-height:1.4}
+.preview-card .health-bar-wrap{margin-top:8px;padding-top:6px;border-top:1px solid var(--border)}
+.preview-card .health-label{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between}
+.preview-card .health-bar{height:4px;border-radius:2px;background:var(--surface2);overflow:hidden}
+.preview-card .health-bar-fill{height:100%;border-radius:2px;transition:width .4s}
+.preview-card .health-score-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:500}
+.report-title-input{background:transparent;border:none;border-bottom:1px dashed var(--border2);color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:11px;padding:1px 4px;outline:none;width:200px;transition:all .12s}
+.report-title-input:focus{color:var(--text);border-bottom-color:var(--blue)}
+.report-title-input::placeholder{color:var(--dim)}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="header-left">
+    <h1>Promo <span>KPI</span> Analyzer</h1>
+
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="padding:9px 12px;">
+      <svg id="themeIcon" style="width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+    <button class="btn btn-ghost" onclick="resetAll()">
+      <svg class="icon" viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.54"/></svg>
+      Reset
+    </button>
+    <button class="btn btn-primary" id="dlBtn" onclick="generate()">
+      <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download .xlsx
+    </button>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('entry',this)">Data entry</button>
+  <button class="tab" onclick="switchTab('preview',this)">Preview <span class="tag-live">live</span></button>
+</div>
+
+<div id="tab-entry" class="panel active">
+  <div class="entry-toolbar">
+    <div class="entry-toolbar-left">
+      <span class="section-title" style="margin-bottom:0">Periods</span>
+      <span class="period-count" id="periodCount"></span>
+    </div>
+    <button class="btn-add" onclick="addPeriod()">
+      <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add period
+    </button>
+  </div>
+  <div class="periods-grid" id="periodsGrid"></div>
+</div>
+
+<div id="tab-preview" class="panel">
+  <div id="summaryBanner"></div>
+  <p class="section-title">KPI snapshot</p>
+  <div class="preview-grid" id="previewGrid"></div>
+
+  <p class="section-title" style="margin-top:26px">Charts</p>
+  <div class="charts-grid" id="chartsGrid">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">Players by period</div>
+        <div class="chart-type-btns">
+          <button class="chart-type-btn active" onclick="setChartType('chartPlayers','bar',this)">Bar</button>
+          <button class="chart-type-btn" onclick="setChartType('chartPlayers','line',this)">Line</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartPlayers" role="img" aria-label="Players by period"></canvas></div>
+      <div class="chart-legend" id="legendPlayers"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">GGR by period</div>
+        <div class="chart-type-btns">
+          <button class="chart-type-btn active" onclick="setChartType('chartGgr','bar',this)">Bar</button>
+          <button class="chart-type-btn" onclick="setChartType('chartGgr','line',this)">Line</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartGgr" role="img" aria-label="GGR by period"></canvas></div>
+      <div class="chart-legend" id="legendGgr"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">Bet amount by period</div>
+        <div class="chart-type-btns">
+          <button class="chart-type-btn active" onclick="setChartType('chartAmount','bar',this)">Bar</button>
+          <button class="chart-type-btn" onclick="setChartType('chartAmount','line',this)">Line</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartAmount" role="img" aria-label="Bet amount by period"></canvas></div>
+      <div class="chart-legend" id="legendAmount"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">Margin % by period</div>
+        <div class="chart-type-btns">
+          <button class="chart-type-btn active" onclick="setChartType('chartMargin','bar',this)">Bar</button>
+          <button class="chart-type-btn" onclick="setChartType('chartMargin','line',this)">Line</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartMargin" role="img" aria-label="Margin % by period"></canvas></div>
+      <div class="chart-legend" id="legendMargin"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">Avg bets per player</div>
+        <div class="chart-type-btns">
+          <button class="chart-type-btn active" onclick="setChartType('chartAvgBets','bar',this)">Bar</button>
+          <button class="chart-type-btn" onclick="setChartType('chartAvgBets','line',this)">Line</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartAvgBets" role="img" aria-label="Avg bets per player"></canvas></div>
+      <div class="chart-legend" id="legendAvgBets"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div class="chart-card-title">Avg amount per player</div>
+        <div class="chart-type-btns">
+          <button class="chart-type-btn active" onclick="setChartType('chartAvgAmt','bar',this)">Bar</button>
+          <button class="chart-type-btn" onclick="setChartType('chartAvgAmt','line',this)">Line</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartAvgAmt" role="img" aria-label="Avg amount per player"></canvas></div>
+      <div class="chart-legend" id="legendAvgAmt"></div>
+    </div>
+  </div>
+
+  <div class="delta-section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <p class="section-title" style="margin-bottom:0">Delta comparisons</p>
+      <button class="add-comparison-btn" onclick="addComparison()">
+        <svg style="width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add comparison
+      </button>
+    </div>
+    <div class="comparisons-list" id="comparisonsList"></div>
+  </div>
+
+  <p class="section-title" style="margin-top:4px">Key findings</p>
+  <div class="findings-grid" id="findingsGrid"></div>
+</div>
+
+<div class="footer-bar">
+  <button class="btn btn-primary" id="dlBtn2" onclick="generate()">
+    <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Generate &amp; download analysis
+  </button>
+  <span class="status-msg" id="statusMsg"></span>
+</div>
+
+</div>
+<script>
+const PALETTE = ["#4f8ef7","#3ecf78","#f5a623","#ff6b5b","#b97cf5","#38bdf8","#fb923c","#a3e635","#f472b6","#34d399"];
+const PALETTE_BG = ["#1a2d52","#0f3320","#3a2200","#3a1510","#2d1a52","#0c2d3a","#3a1f0a","#1e3010","#3a1028","#0a2d24"];
+const PALETTE_FG = ["#a8c4fc","#7ee8a8","#ffc96b","#ffaa9e","#d4aafc","#7dd3fc","#fdba74","#d9f99d","#fbcfe8","#6ee7b7"];
+
+let periodIdCounter = 0;
+let periods = [];
+let comparisons = [];
+
+const INITIAL_PERIODS = [
+  {label:"Promo days 1",         dateFrom:"2024-04-10",dateTo:"2024-05-01",bets:15109710,amount:14083818,ggr:406601,margin:2.98,players:160367},
+  {label:"Next period",           dateFrom:"2024-05-01",dateTo:"2024-05-21",bets:15386644,amount:13041838,ggr:396534,margin:3.04,players:154786},
+  {label:"Previous period",       dateFrom:"2024-03-21",dateTo:"2024-04-10",bets:15854075,amount:13763689,ggr:403749,margin:2.93,players:174986},
+  {label:"Same -1 month",         dateFrom:"2024-03-10",dateTo:"2024-04-01",bets:17791360,amount:15515145,ggr:457920,margin:null,players:195672},
+  {label:"Promo days 2 (active)", dateFrom:"2024-05-12",dateTo:"2024-06-01",bets:15123708,amount:11155760,ggr:409377,margin:null,players:146236},
+];
+
+function newId() { return "p" + (++periodIdCounter); }
+
+function colorIdx(pid) {
+  const idx = periods.findIndex(p => p.id === pid);
+  return idx < 0 ? 0 : idx % PALETTE.length;
+}
+
+function addPeriod(defaults) {
+  const id = newId();
+  periods.push({id, label: defaults?.label || "New period"});
+  renderGrid();
+  if (defaults) fillPeriod(id, defaults);
+  updatePreview();
+}
+
+function removePeriod(id) {
+  if (periods.length <= 2) return;
+  periods = periods.filter(p => p.id !== id);
+  comparisons = comparisons.filter(c => c.aId !== id && c.bId !== id);
+  renderGrid();
+  renderComparisons();
+  updatePreview();
+}
+
+function renderGrid() {
+  const grid = document.getElementById("periodsGrid");
+  const n = periods.length;
+  const cols = Math.min(n, 3);
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+
+  const existingCards = {};
+  grid.querySelectorAll(".pcard").forEach(el => { existingCards[el.dataset.pid] = el; });
+
+  const fragment = document.createDocumentFragment();
+  periods.forEach(p => {
+    if (existingCards[p.id]) {
+      fragment.appendChild(existingCards[p.id]);
+      const removeBtn = existingCards[p.id].querySelector(".pcard-remove");
+      if (removeBtn) removeBtn.disabled = periods.length <= 2;
+      return;
+    }
+    const ci = colorIdx(p.id);
+    const card = document.createElement("div");
+    card.className = "pcard";
+    card.dataset.pid = p.id;
+    const numLabel = String(periods.indexOf(p) + 1).padStart(2, "0");
+    card.innerHTML = `
+      <div class="pcard-top">
+        <div class="pcard-name-row">
+          <span class="pcard-num" style="background:${PALETTE_BG[ci]};color:${PALETTE_FG[ci]}">#${numLabel}</span>
+          <input class="pcard-name-input" data-pid="${p.id}" placeholder="Period name" value="${p.label}" oninput="onLabelChange(this)">
+          <button class="pcard-remove" onclick="removePeriod('${p.id}')" title="Remove period" ${periods.length <= 2 ? "disabled" : ""}>
+            <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pcard-dates">
+        <div class="date-field"><span class="date-label">From</span><input type="date" id="${p.id}_dateFrom" oninput="updatePreview()"></div>
+        <div class="date-field"><span class="date-label">To</span><input type="date" id="${p.id}_dateTo" oninput="updatePreview()"></div>
+      </div>
+      <div class="pcard-fields">
+        <div class="field-row"><label>Bet count</label><input type="text" inputmode="numeric" data-numeric id="${p.id}_bets" placeholder="15 109 710" oninput="fmtInput(this);calcAuto('${p.id}')"></div>
+        <div class="field-row"><label>Bet amount</label><input type="text" inputmode="numeric" data-numeric id="${p.id}_amount" placeholder="14 083 818" oninput="fmtInput(this);calcAuto('${p.id}')"></div>
+        <div class="field-row"><label>GGR</label><input type="text" inputmode="numeric" data-numeric id="${p.id}_ggr" placeholder="406 601" oninput="fmtInput(this);updatePreview()"></div>
+        <div class="field-row"><label>Margin % <span style="font-size:8px;color:var(--amber)" title="Auto-calculated when GGR and Bet Amount are filled">auto</span></label><input type="text" inputmode="decimal" id="${p.id}_margin" placeholder="2.98" oninput="this.dataset.manual='1';this.style.color='';updatePreview()"></div>
+        <div class="field-row"><label>Players</label><input type="text" inputmode="numeric" data-numeric id="${p.id}_players" placeholder="160 367" oninput="fmtInput(this);calcAuto('${p.id}')"></div>
+        <div class="field-row"><label>Bets/player</label><input type="text" id="${p.id}_avgBets" readonly placeholder="auto"><span class="auto-tag">AUTO</span></div>
+        <div class="field-row"><label>Amt/player</label><input type="text" id="${p.id}_avgAmt" readonly placeholder="auto"><span class="auto-tag">AUTO</span></div>
+      </div>`;
+    fragment.appendChild(card);
+  });
+  grid.innerHTML = "";
+  grid.appendChild(fragment);
+
+  document.getElementById("periodCount").textContent = `${periods.length} period${periods.length !== 1 ? "s" : ""}`;
+  syncCardNumbers();
+}
+
+function syncCardNumbers() {
+  periods.forEach((p, i) => {
+    const card = document.querySelector(`.pcard[data-pid="${p.id}"]`);
+    if (!card) return;
+    const numEl = card.querySelector(".pcard-num");
+    const ci = i % PALETTE.length;
+    if (numEl) {
+      numEl.textContent = "#" + String(i + 1).padStart(2, "0");
+      numEl.style.background = PALETTE_BG[ci];
+      numEl.style.color = PALETTE_FG[ci];
+    }
+    const removeBtn = card.querySelector(".pcard-remove");
+    if (removeBtn) removeBtn.disabled = periods.length <= 2;
+  });
+}
+
+function fillPeriod(id, d) {
+  ["dateFrom","dateTo"].forEach(k => {
+    const el = document.getElementById(`${id}_${k}`);
+    if (el && d[k] !== null && d[k] !== undefined) el.value = d[k];
+  });
+  ["bets","amount","ggr","players"].forEach(k => {
+    const el = document.getElementById(`${id}_${k}`);
+    if (el && d[k] !== null && d[k] !== undefined) {
+      el.value = Math.round(d[k]).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F");
+    }
+  });
+  if (d.margin !== null && d.margin !== undefined) {
+    const el = document.getElementById(`${id}_margin`);
+    if (el) el.value = d.margin;
+  }
+  calcAuto(id);
+}
+
+function calcAuto(pid) {
+  const bets    = parseNumInput(document.getElementById(`${pid}_bets`)?.value)    || null;
+  const amount  = parseNumInput(document.getElementById(`${pid}_amount`)?.value)  || null;
+  const players = parseNumInput(document.getElementById(`${pid}_players`)?.value) || null;
+  const ggr     = parseNumInput(document.getElementById(`${pid}_ggr`)?.value)     || null;
+  const bEl = document.getElementById(`${pid}_avgBets`);
+  const aEl = document.getElementById(`${pid}_avgAmt`);
+  const mEl = document.getElementById(`${pid}_margin`);
+  if (bEl) bEl.value = (bets && players) ? (bets / players).toFixed(2) : "";
+  if (aEl) aEl.value = (amount && players) ? (amount / players).toFixed(2) : "";
+  if (mEl && !mEl.dataset.manual && ggr && amount) {
+    mEl.value = ((ggr / amount) * 100).toFixed(2);
+    mEl.style.color = "var(--amber)";
+    mEl.title = "Auto-calculated: GGR ÷ Bet Amount × 100";
+  }
+  updatePreview();
+}
+
+function onLabelChange(input) {
+  const pid = input.dataset.pid;
+  const p = periods.find(x => x.id === pid);
+  if (p) p.label = input.value;
+  updateComparisonSelects();
+  updatePreview();
+}
+
+function parseNumInput(v) {
+  if (!v || v.trim() === "") return null;
+  // strip thin spaces (U+202F), regular spaces, commas
+  const clean = v.replace(/[\u202F\s,]/g, "");
+  const n = parseFloat(clean);
+  return isNaN(n) ? null : n;
+}
+
+function fmtInput(el) {
+  if (!el.dataset.numeric) return;
+  const raw = el.value.replace(/[\u202F\s,]/g, "");
+  if (raw === "" || raw === "-") return;
+  const n = parseInt(raw, 10);
+  if (isNaN(n)) return;
+  const pos = el.selectionStart;
+  const oldLen = el.value.length;
+  el.value = n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F");
+  // restore cursor position accounting for added separators
+  const newLen = el.value.length;
+  el.selectionStart = el.selectionEnd = Math.max(0, pos + (newLen - oldLen));
+}
+
+function getVal(pid, key) {
+  const el = document.getElementById(`${pid}_${key}`);
+  if (!el || el.value === "") return null;
+  if (el.type === "date") return el.value;
+  return parseNumInput(el.value);
+}
+
+function getPeriodData(p) {
+  const bets    = getVal(p.id, "bets");
+  const amount  = getVal(p.id, "amount");
+  const players = getVal(p.id, "players");
+  return {
+    id: p.id, label: p.label,
+    colorIdx: periods.indexOf(p) % PALETTE.length,
+    dateFrom: getVal(p.id, "dateFrom"), dateTo: getVal(p.id, "dateTo"),
+    bets, amount, ggr: getVal(p.id, "ggr"),
+    margin: getVal(p.id, "margin"), players,
+    avgBets: (bets && players) ? bets / players : null,
+    avgAmt:  (amount && players) ? amount / players : null,
+  };
+}
+
+function getData() { return periods.map(getPeriodData); }
+
+function fmtNum(v) {
+  if (v === null || v === undefined) return "—";
+  return Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "\u202F");
+}
+function fmt(v, type) {
+  if (v === null || v === undefined) return "—";
+  if (type === "pct")   return v.toFixed(2) + "%";
+  if (type === "float") return v.toFixed(2);
+  return fmtNum(v);
+}
+function pct(a, b) { if (!a || !b) return null; return (a - b) / Math.abs(b); }
+function delta(a, b) { return (a === null || b === null) ? null : a - b; }
+function signalText(d, metric) {
+  if (d === null) return "—";
+  const up = d >= 0;
+  const map = {players:"players",bets:"bet count",amount:"wagered",ggr:"GGR",margin:"margin",avgBets:"bets/player",avgAmt:"spend/player"};
+  return (up ? "↑ " : "↓ ") + (map[metric] || "") + (up ? " up" : " down");
+}
+
+function toggleTheme() {
+  const root = document.documentElement;
+  const isLight = root.classList.toggle("light");
+  localStorage.setItem("theme", isLight ? "light" : "dark");
+  const icon = document.getElementById("themeIcon");
+  if (isLight) {
+    icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  } else {
+    icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+  }
+  rebuildCharts();
+}
+
+function rebuildCharts() {
+  Object.keys(chartInstances).forEach(k => { chartInstances[k].destroy(); delete chartInstances[k]; });
+  const d = getData();
+  buildCharts(d);
+}
+
+function applyStoredTheme() {
+  const stored = localStorage.getItem("theme");
+  if (stored === "light") {
+    document.documentElement.classList.add("light");
+    const icon = document.getElementById("themeIcon");
+    if (icon) icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  }
+}
+
+function resetAll() {
+  periods = [];
+  comparisons = [];
+  periodIdCounter = 0;
+  document.getElementById("periodsGrid").innerHTML = "";
+  document.getElementById("comparisonsList").innerHTML = "";
+  document.getElementById("statusMsg").textContent = "";
+  INITIAL_PERIODS.forEach(d => addPeriod(d));
+  comparisons = [{id: "c1", aId: periods[0]?.id, bId: periods[2]?.id},{id: "c2", aId: periods[0]?.id, bId: periods[1]?.id},{id: "c3", aId: periods[0]?.id, bId: periods[3]?.id}].filter(c => c.aId && c.bId);
+  renderComparisons();
+  updatePreview();
+}
+
+function addComparison() {
+  if (periods.length < 2) return;
+  const cid = "c" + Date.now();
+  comparisons.push({id: cid, aId: periods[0].id, bId: periods[1].id});
+  renderComparisons();
+  updatePreview();
+}
+
+function removeComparison(cid) {
+  comparisons = comparisons.filter(c => c.id !== cid);
+  renderComparisons();
+  updatePreview();
+}
+
+function renderComparisons() {
+  const list = document.getElementById("comparisonsList");
+  list.innerHTML = "";
+  if (comparisons.length === 0) {
+    list.innerHTML = `<p class="no-data-msg">No comparisons. Click "Add comparison" to create one.</p>`;
+    return;
+  }
+  comparisons.forEach(cmp => {
+    const row = document.createElement("div");
+    row.className = "comparison-row";
+    row.dataset.cid = cmp.id;
+    const opts = periods.map(p => `<option value="${p.id}" ${p.id === cmp.aId ? "selected" : ""}>${p.label || "Unnamed"}</option>`).join("");
+    const opts2 = periods.map(p => `<option value="${p.id}" ${p.id === cmp.bId ? "selected" : ""}>${p.label || "Unnamed"}</option>`).join("");
+    row.innerHTML = `
+      <div class="comparison-header">
+        <div class="comparison-selects">
+          <select onchange="onCmpChange('${cmp.id}','a',this.value)">${opts}</select>
+          <span class="vs-label">vs</span>
+          <select onchange="onCmpChange('${cmp.id}','b',this.value)">${opts2}</select>
+        </div>
+        <button class="comparison-remove-btn" onclick="removeComparison('${cmp.id}')" title="Remove comparison">
+          <svg style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div id="deltaTable_${cmp.id}"></div>`;
+    list.appendChild(row);
+  });
+}
+
+function updateComparisonSelects() {
+  comparisons.forEach(cmp => {
+    const row = document.querySelector(`.comparison-row[data-cid="${cmp.id}"]`);
+    if (!row) return;
+    const selects = row.querySelectorAll("select");
+    const opts = periods.map(p => `<option value="${p.id}">${p.label || "Unnamed"}</option>`).join("");
+    selects[0].innerHTML = opts; selects[0].value = cmp.aId;
+    selects[1].innerHTML = opts; selects[1].value = cmp.bId;
+  });
+}
+
+function onCmpChange(cid, side, val) {
+  const cmp = comparisons.find(c => c.id === cid);
+  if (!cmp) return;
+  if (side === "a") cmp.aId = val; else cmp.bId = val;
+  updatePreview();
+}
+
+function buildDeltaTable(cmp, d) {
+  const a = d.find(p => p.id === cmp.aId);
+  const b = d.find(p => p.id === cmp.bId);
+  const container = document.getElementById(`deltaTable_${cmp.id}`);
+  if (!container || !a || !b) return;
+  if (a.id === b.id) { container.innerHTML = `<p class="no-data-msg" style="padding:10px 14px">Select two different periods.</p>`; return; }
+
+  const metrics = [
+    {label:"Players",    key:"players"},
+    {label:"Bet count",  key:"bets"},
+    {label:"Bet amount", key:"amount"},
+    {label:"GGR",        key:"ggr"},
+    {label:"Margin",     key:"margin", isMargin:true},
+    {label:"Amt/player", key:"avgAmt",  isFloat:true},
+    {label:"Bets/player",key:"avgBets", isFloat:true},
+  ];
+  const rows = metrics.map(m => {
+    const va = a[m.key], vb = b[m.key];
+    const dAbs = delta(va, vb);
+    const dPct = pct(va, vb);
+    const cls = dAbs === null ? "na" : (dAbs >= 0 ? "up" : "dn");
+    const vFmt = m.isMargin ? "pct" : m.isFloat ? "float" : null;
+    const fmtD = v => {
+      if (v === null) return "—";
+      const s = v >= 0 ? "+" : "";
+      if (m.isMargin) return s + v.toFixed(2) + "%";
+      if (m.isFloat)  return s + v.toFixed(2);
+      return s + Number(v).toLocaleString();
+    };
+    return `<tr>
+      <td>${m.label}</td>
+      <td>${fmt(va,vFmt)}</td><td>${fmt(vb,vFmt)}</td>
+      <td class="${cls}">${fmtD(dAbs)}</td>
+      <td class="${cls}">${dPct===null?"—":(dPct>=0?"+":"")+(dPct*100).toFixed(1)+"%"}</td>
+      <td class="${cls}" style="text-align:left">${signalText(dAbs,m.key)}</td>
+    </tr>`;
+  }).join("");
+  container.innerHTML = `
+    <table class="delta-table">
+      <thead><tr>
+        <th style="text-align:left">Metric</th>
+        <th>${a.label}</th><th>${b.label}</th>
+        <th>Δ Abs</th><th>Δ %</th><th style="text-align:left">Signal</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+const chartInstances = {};
+const chartTypes = {chartPlayers:"bar",chartGgr:"bar",chartAmount:"bar",chartMargin:"bar",chartAvgBets:"bar",chartAvgAmt:"bar"};
+
+function setChartType(chartId, type, btn) {
+  chartTypes[chartId] = type;
+  const card = btn.closest(".chart-card");
+  card.querySelectorAll(".chart-type-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const inst = chartInstances[chartId];
+  if (inst) {
+    const isLine = type === "line";
+    inst.config.type = type;
+    if (isLine) {
+      inst.data.datasets[0].fill = true;
+      inst.data.datasets[0].tension = 0.35;
+      inst.data.datasets[0].borderColor = inst.data.datasets[0].backgroundColor;
+      inst.data.datasets[0].backgroundColor = inst.data.datasets[0].backgroundColor.map(c => c + "33");
+      inst.data.datasets[0].borderWidth = 2;
+      inst.data.datasets[0].pointRadius = 5;
+      inst.data.datasets[0].pointHoverRadius = 7;
+      if (inst.options.scales?.x) inst.options.scales.x.offset = false;
+    } else {
+      const d = getData();
+      const colors = d.map(p => PALETTE[p.colorIdx]);
+      inst.data.datasets[0].backgroundColor = colors;
+      inst.data.datasets[0].borderColor = colors;
+      inst.data.datasets[0].fill = false;
+      inst.data.datasets[0].tension = 0;
+      inst.data.datasets[0].borderWidth = 0;
+      inst.data.datasets[0].pointRadius = 0;
+    }
+    inst.update();
+  }
+}
+
+function calcHealthScore(p, allData) {
+  let score = 0, count = 0;
+  const metrics = ["players","bets","amount","ggr","avgAmt","avgBets"];
+  metrics.forEach(key => {
+    const val = p[key];
+    if (val === null) return;
+    const others = allData.filter(x => x.id !== p.id && x[key] !== null).map(x => x[key]);
+    if (!others.length) return;
+    const avg = others.reduce((a,b)=>a+b,0)/others.length;
+    const ratio = val / avg;
+    score += Math.min(ratio, 2) / 2;
+    count++;
+  });
+  return count > 0 ? Math.round((score / count) * 100) : null;
+}
+
+function buildSummaryBanner(d) {
+  const banner = document.getElementById("summaryBanner");
+  if (!d.length) { banner.innerHTML = ""; return; }
+  const p1 = d[0];
+  const metrics = [];
+  d.slice(1).forEach(b => {
+    if (p1.players !== null && b.players !== null) {
+      const r = pct(p1.players, b.players);
+      if (r !== null) metrics.push({key:"players", label:`vs ${b.label}`, val:r});
+    }
+    if (p1.ggr !== null && b.ggr !== null) {
+      const r = pct(p1.ggr, b.ggr);
+      if (r !== null) metrics.push({key:"ggr", label:`vs ${b.label}`, val:r});
+    }
+  });
+  if (!metrics.length) { banner.innerHTML = ""; return; }
+  const worst = metrics.slice().sort((a,b)=>a.val-b.val)[0];
+  const best  = metrics.slice().sort((a,b)=>b.val-a.val)[0];
+  const highlight = Math.abs(worst.val) > Math.abs(best.val) ? worst : best;
+  const up = highlight.val >= 0;
+  const metricName = {players:"Player count",ggr:"GGR",amount:"Bet amount",avgAmt:"Spend/player",avgBets:"Bets/player"}[highlight.key]||highlight.key;
+  const type = up ? "ok" : (Math.abs(highlight.val) > 0.1 ? "bad" : "warn");
+  const icon = up ? "↑" : "↓";
+  const sign = up ? "+" : "";
+  banner.innerHTML = `
+    <div class="summary-banner ${type}">
+      <div class="summary-banner-icon">${icon}</div>
+      <div>
+        <div class="summary-banner-label ${type}">Top signal — ${d[0].label}</div>
+        <div class="summary-banner-text">${metricName} ${sign}${(highlight.val*100).toFixed(1)}% ${highlight.label}</div>
+      </div>
+    </div>`;
+}
+
+const CHART_DEFS = [
+  {id:"chartPlayers",legendId:"legendPlayers",key:"players",yTickFmt:v=>(v/1000).toFixed(0)+"K",ttFmt:v=>fmtNum(v)},
+  {id:"chartGgr",    legendId:"legendGgr",    key:"ggr",    yTickFmt:v=>(v/1000).toFixed(0)+"K",ttFmt:v=>fmtNum(v)},
+  {id:"chartAmount", legendId:"legendAmount", key:"amount", yTickFmt:v=>(v/1e6).toFixed(1)+"M",ttFmt:v=>fmtNum(v)},
+  {id:"chartMargin", legendId:"legendMargin", key:"margin", yTickFmt:v=>v.toFixed(1)+"%",ttFmt:v=>v.toFixed(2)+"%"},
+  {id:"chartAvgBets",legendId:"legendAvgBets",key:"avgBets",yTickFmt:v=>v.toFixed(1),ttFmt:v=>v.toFixed(2)},
+  {id:"chartAvgAmt", legendId:"legendAvgAmt", key:"avgAmt", yTickFmt:v=>v.toFixed(1),ttFmt:v=>v.toFixed(2)},
+];
+
+function buildCharts(d) {
+  const labels = d.map(p => p.label);
+  const colors = d.map(p => PALETTE[p.colorIdx]);
+  CHART_DEFS.forEach(cd => {
+    if (chartInstances[cd.id]) { chartInstances[cd.id].destroy(); delete chartInstances[cd.id]; }
+    const values = d.map(p => p[cd.key]);
+    const legendEl = document.getElementById(cd.legendId);
+    if (legendEl) legendEl.innerHTML = d.map((p,i)=>`<div class="chart-legend-item"><span class="chart-legend-dot" style="background:${colors[i]}"></span>${p.label}${values[i]!==null?" · "+cd.ttFmt(values[i]):""}</div>`).join("");
+    if (!values.some(v=>v!==null)) return;
+    const canvas = document.getElementById(cd.id);
+    if (!canvas) return;
+    chartInstances[cd.id] = new Chart(canvas, {
+      type: chartTypes[cd.id] || "bar",
+      data:{labels, datasets:[{data:values, backgroundColor:colors, borderRadius:4, borderSkipped:false}]},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{callbacks:{label:ctx=>ctx.raw!==null?cd.ttFmt(ctx.raw):"—"},backgroundColor:getComputedStyle(document.documentElement).getPropertyValue('--surface2').trim()||"#1e2126",borderColor:getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||"#2a2d34",borderWidth:1,titleColor:getComputedStyle(document.documentElement).getPropertyValue('--text').trim()||"#e8eaf0",bodyColor:getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||"#7a7f8e",titleFont:{family:"'IBM Plex Mono',monospace",size:11},bodyFont:{family:"'IBM Plex Mono',monospace",size:11}}
+        },
+        scales:{
+          x:{ticks:{color:getComputedStyle(document.documentElement).getPropertyValue('--dim').trim()||"#4a4f5c",font:{family:"'IBM Plex Mono',monospace",size:9},maxRotation:30,autoSkip:false},grid:{display:false},border:{color:getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||"#2a2d34"}},
+          y:{ticks:{color:getComputedStyle(document.documentElement).getPropertyValue('--dim').trim()||"#4a4f5c",font:{family:"'IBM Plex Mono',monospace",size:9},callback:cd.yTickFmt},grid:{color:getComputedStyle(document.documentElement).getPropertyValue('--surface2').trim()||"#1e2126"},border:{color:getComputedStyle(document.documentElement).getPropertyValue('--border').trim()||"#2a2d34",dash:[4,4]}}
+        }
+      }
+    });
+  });
+}
+
+function buildPreviewCards(d) {
+  const grid = document.getElementById("previewGrid");
+  const n = d.length;
+  const cols = n <= 2 ? 2 : n <= 3 ? 3 : n <= 4 ? 4 : n <= 5 ? 5 : n <= 6 ? 3 : n <= 8 ? 4 : 5;
+  grid.style.gridTemplateColumns = `repeat(${Math.min(cols, n)}, 1fr)`;
+  grid.innerHTML = "";
+  d.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "preview-card";
+    const color = PALETTE[p.colorIdx];
+    const bg = PALETTE_BG[p.colorIdx];
+    const fg = PALETTE_FG[p.colorIdx];
+    const dateStr = (p.dateFrom && p.dateTo) ? `${p.dateFrom} → ${p.dateTo}` : "no dates";
+    const rows = [["GGR",fmt(p.ggr)],["Players",fmt(p.players)],["Margin",fmt(p.margin,"pct")],["Bets/player",fmt(p.avgBets,"float")],["Amt/player",fmt(p.avgAmt,"float")]];
+    const score = calcHealthScore(p, d);
+    const scoreColor = score === null ? "var(--dim)" : score >= 60 ? "var(--green)" : score >= 40 ? "var(--amber)" : "var(--coral)";
+    const healthHtml = score !== null ? `
+      <div class="health-bar-wrap">
+        <div class="health-label"><span>Period health</span><span class="health-score-badge" style="color:${scoreColor}">${score}</span></div>
+        <div class="health-bar"><div class="health-bar-fill" style="width:${score}%;background:${scoreColor}"></div></div>
+      </div>` : "";
+    card.innerHTML = `
+      <div class="badge" style="background:${bg};color:${fg}">${p.label}</div>
+      <div style="font-size:9px;color:var(--dim);font-family:'IBM Plex Mono',monospace;margin-bottom:7px">${dateStr}</div>
+      ${rows.map(([l,v])=>`<div class="metric"><span class="mlbl">${l}</span><span class="mval">${v}</span></div>`).join("")}
+      ${healthHtml}`;
+    grid.appendChild(card);
+  });
+}
+
+function buildFindings(d) {
+  const grid = document.getElementById("findingsGrid");
+  if (!d.length) { grid.innerHTML = `<p class="no-data-msg">Enter data to generate findings.</p>`; return; }
+
+  const fmtN = v => v !== null ? fmtNum(v) : "—";
+  const fmtF = v => v !== null ? v.toFixed(2) : "—";
+  const fmtP = v => v !== null ? (v*100).toFixed(1)+"%" : "—";
+  const sign = v => v >= 0 ? "+" : "";
+  const hi = (v, cls) => `<span class="${cls}">${v}</span>`;
+  const isPromo = label => /promo|promotion|camp|boost/i.test(label);
+
+  // severity: return tier label + icon intensity based on abs % change
+  function severity(r) {
+    if (r === null) return {tier:"na", label:"no data"};
+    const abs = Math.abs(r) * 100;
+    if (abs < 2)  return {tier:"negligible", label:"negligible (<2%)"};
+    if (abs < 10) return {tier:"moderate",   label:"moderate"};
+    if (abs < 20) return {tier:"significant",label:"significant"};
+    return           {tier:"critical",   label:"critical"};
+  }
+
+  // type based on direction + severity
+  function findingType(r, preferGood) {
+    if (r === null) return "info";
+    const s = severity(r);
+    if (s.tier === "negligible") return "info";
+    const good = preferGood ? r >= 0 : r < 0;
+    if (good) return s.tier === "critical" || s.tier === "significant" ? "ok" : "ok";
+    return s.tier === "critical" ? "bad" : s.tier === "significant" ? "warn" : "info";
+  }
+
+  // icon based on direction + severity
+  function icon(r) {
+    if (r === null) return "—";
+    const s = severity(r);
+    if (s.tier === "negligible") return "~";
+    return r >= 0 ? "↑" : "↓";
+  }
+
+  // promo-aware framing
+  function frame(aLabel, bLabel, metric, r) {
+    const aIsPromo = isPromo(aLabel);
+    const up = r >= 0;
+    const s = severity(r);
+    const frames = {
+      players: {
+        promo_up:   `The promotion drove a ${s.label} increase in player participation.`,
+        promo_dn:   `Despite the promotion, player count fell ${s.label === "critical" ? "sharply" : s.label === "significant" ? "noticeably" : "slightly"} — acquisition may need strengthening.`,
+        normal_up:  `${s.tier === "critical" ? "Substantially" : "Noticeably"} more players active in this period.`,
+        normal_dn:  `Player count declined ${s.label} compared to the reference period.`,
+      },
+      ggr: {
+        promo_up:   `The promotion generated ${s.label} GGR growth — a positive return on the campaign.`,
+        promo_dn:   `GGR fell ${s.label} during the promotion — revenue impact is ${s.tier === "critical" ? "concerning" : "worth monitoring"}.`,
+        normal_up:  `Revenue was ${s.label === "critical" ? "substantially" : "noticeably"} higher in this period.`,
+        normal_dn:  `Revenue declined ${s.label} vs the reference period.`,
+      },
+      margin: {
+        promo_up:   `Margin held and even improved during the promotion — no profitability erosion.`,
+        promo_dn:   `Margin compressed ${s.label} during the promotion — the campaign ${s.tier === "critical" ? "significantly eroded" : "slightly dented"} profitability.`,
+        normal_up:  `Margin was healthier in this period.`,
+        normal_dn:  `Margin was lower in this period.`,
+      },
+      avgAmt: {
+        promo_up:   `Players who engaged with the promotion wagered ${s.label === "critical" ? "dramatically" : "noticeably"} more per session — strong quality signal.`,
+        promo_dn:   `Average spend per player dropped ${s.label} during the promotion — players may be staking less.`,
+        normal_up:  `Higher spend per player in this period.`,
+        normal_dn:  `Lower spend per player in this period.`,
+      },
+      avgBets: {
+        promo_up:   `Bet frequency per player increased ${s.label === "critical" ? "dramatically" : "noticeably"} during the promotion — engagement is up.`,
+        promo_dn:   `Bet frequency per player dropped ${s.label} — players placed fewer bets per session.`,
+        normal_up:  `Higher betting frequency per player.`,
+        normal_dn:  `Lower betting frequency per player.`,
+      },
+    };
+    const f = frames[metric];
+    if (!f) return "";
+    const key = aIsPromo ? (up ? "promo_up" : "promo_dn") : (up ? "normal_up" : "normal_dn");
+    return f[key] || "";
+  }
+
+  const findings = [];
+
+  // ── Pairwise findings for every active comparison ─────────────────────────
+  const pairs = comparisons.length > 0
+    ? comparisons.map(c => ({a: d.find(p=>p.id===c.aId), b: d.find(p=>p.id===c.bId)})).filter(x=>x.a&&x.b&&x.a.id!==x.b.id)
+    : (d.length >= 2 ? [{a:d[0], b:d[1]}] : []);
+
+  pairs.forEach(({a, b}) => {
+    const pairTag = `<span class="hi">${a.label}</span> vs <span class="hi">${b.label}</span>`;
+
+    // 1. Players
+    if (a.players !== null && b.players !== null) {
+      const r = pct(a.players, b.players);
+      const s = severity(r);
+      findings.push({
+        icon: icon(r), type: findingType(r, true),
+        group: `${a.label} vs ${b.label}`,
+        title: `Player count — ${s.label}`,
+        desc: `${pairTag}: ${hi(fmtN(a.players),"hi")} vs ${hi(fmtN(b.players),"hi")} players — ${hi(sign(r)+fmtP(r), r>=0?"hi-up":"hi-dn")}. ${frame(a.label, b.label, "players", r)}`
+      });
+    }
+
+    // 2. GGR + quality-over-quantity check
+    if (a.ggr !== null && b.ggr !== null) {
+      const r = pct(a.ggr, b.ggr);
+      const s = severity(r);
+      let qoq = "";
+      if (a.players !== null && b.players !== null) {
+        const playerR = pct(a.players, b.players);
+        if (playerR !== null && r !== null) {
+          if (r > 0 && playerR < 0) qoq = ` ${hi("Quality-over-quantity signal:", "hi")} GGR grew despite fewer players — active players generated more revenue per head.`;
+          else if (r < 0 && playerR < 0 && r > playerR) qoq = ` GGR fell less than player count — per-player revenue held up reasonably well.`;
+          else if (r < 0 && playerR > 0) qoq = ` Concerning: GGR fell even though player count rose — revenue-per-player declined.`;
+        }
+      }
+      findings.push({
+        icon: icon(r), type: findingType(r, true),
+        group: `${a.label} vs ${b.label}`,
+        title: `GGR — ${s.label}`,
+        desc: `${pairTag}: ${hi(fmtN(a.ggr),"hi")} vs ${hi(fmtN(b.ggr),"hi")} — ${hi(sign(r)+fmtP(r), r>=0?"hi-up":"hi-dn")}. ${frame(a.label, b.label, "ggr", r)}${qoq}`
+      });
+    }
+
+    // 3. Margin health
+    if (a.margin !== null && b.margin !== null) {
+      const r = pct(a.margin, b.margin);
+      const aMargin = a.margin;
+      const s = severity(r);
+      let marginAlert = "";
+      if (aMargin < 2.5) marginAlert = ` ${hi("⚠ Margin below 2.5% — profitability is thin.", "hi-dn")}`;
+      else if (aMargin >= 4) marginAlert = ` ${hi("Strong margin above 4%.", "hi-up")}`;
+      findings.push({
+        icon: icon(r), type: aMargin < 2.5 ? "bad" : findingType(r, true),
+        group: `${a.label} vs ${b.label}`,
+        title: `Margin — ${s.label}`,
+        desc: `${pairTag}: ${hi(fmtF(aMargin)+"%","hi")} vs ${hi(fmtF(b.margin)+"%","hi")} — ${hi(sign(r)+fmtP(r), r>=0?"hi-up":"hi-dn")}. ${frame(a.label, b.label, "margin", r)}${marginAlert}`
+      });
+    }
+
+    // 4. Bets/player vs Amt/player divergence
+    if (a.avgBets !== null && b.avgBets !== null && a.avgAmt !== null && b.avgAmt !== null) {
+      const rBets = pct(a.avgBets, b.avgBets);
+      const rAmt  = pct(a.avgAmt,  b.avgAmt);
+      const sBets = severity(rBets), sAmt = severity(rAmt);
+
+      // Divergence: one up, one down
+      if (rBets !== null && rAmt !== null && Math.sign(rBets) !== Math.sign(rAmt) && (sBets.tier !== "negligible" || sAmt.tier !== "negligible")) {
+        const stakeDown = rBets > 0 && rAmt < 0;
+        findings.push({
+          icon: "⚡", type: "warn",
+          group: `${a.label} vs ${b.label}`,
+          title: `Bet frequency vs spend divergence`,
+          desc: `${pairTag}: bets/player ${hi(sign(rBets)+fmtP(rBets), rBets>=0?"hi-up":"hi-dn")} but amt/player ${hi(sign(rAmt)+fmtP(rAmt), rAmt>=0?"hi-up":"hi-dn")}. ${stakeDown ? `Players placed ${hi("more bets","hi")} but with ${hi("smaller stakes","hi-dn")} — possible stake-limiting behaviour or shift to lower-value games.` : `Players placed ${hi("fewer bets","hi-dn")} but with ${hi("higher stakes per bet","hi-up")} — a smaller, higher-value segment may be driving activity.`}`
+        });
+      } else {
+        // Both move same direction — report as combined engagement signal
+        if (rBets !== null && sBets.tier !== "negligible") {
+          findings.push({
+            icon: icon(rBets), type: findingType(rBets, true),
+            group: `${a.label} vs ${b.label}`,
+            title: `Betting engagement — ${sBets.label}`,
+            desc: `${pairTag}: bets/player ${hi(sign(rBets)+fmtP(rBets), rBets>=0?"hi-up":"hi-dn")}, amt/player ${hi(sign(rAmt)+fmtP(rAmt), rAmt>=0?"hi-up":"hi-dn")}. ${frame(a.label, b.label, "avgBets", rBets)}`
+          });
+        }
+      }
+    }
+  });
+
+  // ── Trend / direction of travel (3+ periods) ─────────────────────────────
+  if (d.length >= 3) {
+    const trendMetrics = [
+      {key:"players", label:"Player count"},
+      {key:"ggr",     label:"GGR"},
+      {key:"margin",  label:"Margin"},
+      {key:"avgAmt",  label:"Avg spend/player"},
+    ];
+    trendMetrics.forEach(m => {
+      const vals = d.map(p => p[m.key]).filter(v => v !== null);
+      if (vals.length < 3) return;
+      let rises = 0, falls = 0, total = 0;
+      for (let i = 1; i < vals.length; i++) {
+        const diff = vals[i] - vals[i-1];
+        if (Math.abs(diff/vals[i-1]) < 0.01) continue; // skip negligible
+        total++;
+        if (diff > 0) rises++; else falls++;
+      }
+      if (total === 0) return;
+      if (rises === total) {
+        findings.push({icon:"↗", type:"ok", group:"Trend analysis",
+          title:`${m.label} — consistently rising across all periods`,
+          desc:`${m.label} improved in every step across the <span class="hi">${d.length} periods</span>. This is a positive momentum signal — the trend is moving in the right direction.`});
+      } else if (falls === total) {
+        findings.push({icon:"↘", type:"bad", group:"Trend analysis",
+          title:`${m.label} — consistently declining across all periods`,
+          desc:`${m.label} fell in every step across the <span class="hi">${d.length} periods</span>. This is a persistent negative trend — ${hi("action recommended","hi-dn")}.`});
+      } else if (rises > 0 && falls > 0) {
+        findings.push({icon:"~", type:"info", group:"Trend analysis",
+          title:`${m.label} — volatile across periods`,
+          desc:`${m.label} moved up in <span class="hi">${rises}</span> steps and down in <span class="hi">${falls}</span> steps. No consistent trend — performance is mixed across periods.`});
+      }
+    });
+  }
+
+  // ── Best and worst period per metric ─────────────────────────────────────
+  const champMetrics = [
+    {key:"ggr",     label:"GGR",             fmt: fmtN},
+    {key:"players", label:"Players",          fmt: fmtN},
+    {key:"margin",  label:"Margin %",         fmt: v => fmtF(v)+"%"},
+    {key:"avgAmt",  label:"Avg spend/player", fmt: fmtF},
+  ];
+  champMetrics.forEach(m => {
+    const valid = d.filter(p => p[m.key] !== null);
+    if (valid.length < 2) return;
+    const best  = valid.reduce((a,b) => a[m.key] > b[m.key] ? a : b);
+    const worst = valid.reduce((a,b) => a[m.key] < b[m.key] ? a : b);
+    const spread = pct(best[m.key], worst[m.key]);
+    if (spread !== null && Math.abs(spread) >= 0.05) {
+      findings.push({icon:"🏆", type:"ok", group:"Period rankings",
+        title:`Best ${m.label}: ${best.label}`,
+        desc:`${hi(best.label,"hi")} leads with ${hi(m.fmt(best[m.key]),"hi-up")} vs worst ${hi(worst.label,"hi")} at ${hi(m.fmt(worst[m.key]),"hi-dn")} — a ${hi((Math.abs(spread)*100).toFixed(1)+"%","hi")} spread across all periods.`
+      });
+    }
+  });
+
+  // ── Overall recommendation ────────────────────────────────────────────────
+  if (findings.length) {
+    const pos = findings.filter(f=>f.type==="ok").length;
+    const neg = findings.filter(f=>f.type==="bad"||f.type==="warn").length;
+    const ratio = pos / (pos + neg || 1);
+    let rec;
+    if (ratio >= 0.7)     rec = "Overall the data shows a <span class='hi-up'>positive picture</span>. Focus on scaling what's working — particularly the periods with high engagement and GGR growth.";
+    else if (ratio >= 0.4) rec = "Results are <span class='hi'>mixed</span>. Some metrics are performing well but others need attention. Prioritise player acquisition and margin protection.";
+    else                   rec = "The data shows <span class='hi-dn'>mostly negative signals</span>. Promos are not driving sufficient volume or revenue growth. Consider redesigning campaign mechanics and adding acquisition-focused incentives.";
+    findings.push({icon:"→", type:"info", group:"Recommendation", title:"Overall recommendation", desc: rec});
+  }
+
+  // ── Group and render ──────────────────────────────────────────────────────
+  const groups = {};
+  findings.forEach(f => {
+    const g = f.group || "General";
+    if (!groups[g]) groups[g] = [];
+    groups[g].push(f);
+  });
+
+  grid.innerHTML = "";
+  Object.entries(groups).forEach(([groupName, items]) => {
+    const groupEl = document.createElement("div");
+    groupEl.style.cssText = "margin-bottom:18px";
+    groupEl.innerHTML = `<div style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:8px;padding-left:2px">${groupName}</div>`;
+    items.forEach(f => {
+      const el = document.createElement("div");
+      el.className = "finding";
+      el.style.marginBottom = "6px";
+      el.innerHTML = `<div class="finding-icon ${f.type}">${f.icon}</div><div class="finding-body"><div class="finding-title">${f.title}</div><div class="finding-desc">${f.desc}</div></div>`;
+      groupEl.appendChild(el);
+    });
+    grid.appendChild(groupEl);
+  });
+
+  if (!findings.length) {
+    grid.innerHTML = `<p class="no-data-msg">Enter data in at least 2 periods to generate findings.</p>`;
+  }
+}
+
+function updatePreview() {
+  const d = getData();
+  buildSummaryBanner(d);
+  buildPreviewCards(d);
+  buildCharts(d);
+  comparisons.forEach(cmp => buildDeltaTable(cmp, d));
+  buildFindings(d);
+}
+
+function switchTab(name, el) {
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
+  el.classList.add("active");
+  document.getElementById("tab-"+name).classList.add("active");
+  if (name === "preview") updatePreview();
+}
+
+function generate() {
+  const btns = [document.getElementById("dlBtn"),document.getElementById("dlBtn2")];
+  const st = document.getElementById("statusMsg");
+  btns.forEach(b=>b.disabled=true);
+  st.className="status-msg"; st.textContent="Building…";
+  try {
+    const d = getData();
+    const wb = XLSX.utils.book_new();
+    const rows = [];
+    const reportTitle = document.getElementById("reportTitle")?.value || "PROMO KPI ANALYSIS";
+    rows.push([reportTitle]);
+    rows.push([]);
+    rows.push(["Period KPI Comparison"]);
+    rows.push(["Metric",...d.map(p=>p.label+(p.dateFrom?"\n"+p.dateFrom+" → "+p.dateTo:""))]);
+    [{label:"Bet count",key:"bets"},{label:"Bet amount",key:"amount"},{label:"GGR",key:"ggr"},{label:"Margin",key:"margin",isMargin:true},{label:"Players",key:"players"},{label:"Bets/player (auto)",key:"avgBets"},{label:"Amt/player (auto)",key:"avgAmt"}]
+      .forEach(m=>rows.push([m.label,...d.map(p=>p[m.key]===null?"—":m.isMargin?p[m.key]/100:p[m.key])]));
+    rows.push([]); rows.push([]);
+    comparisons.forEach(cmp => {
+      const a=d.find(p=>p.id===cmp.aId), b=d.find(p=>p.id===cmp.bId);
+      if (!a||!b||a.id===b.id) return;
+      rows.push([`${a.label} vs ${b.label}`]);
+      rows.push(["Metric",a.label,b.label,"Δ Absolute","Δ %","Signal"]);
+      [{label:"Players",key:"players"},{label:"Bet count",key:"bets"},{label:"Bet amount",key:"amount"},{label:"GGR",key:"ggr"},{label:"Margin",key:"margin",isMargin:true},{label:"Amt/player",key:"avgAmt"},{label:"Bets/player",key:"avgBets"}]
+        .forEach(m=>{
+          const va=a[m.key],vb=b[m.key],dAbs=delta(va,vb),dPct=pct(va,vb);
+          rows.push([m.label,va===null?"—":m.isMargin?va/100:va,vb===null?"—":m.isMargin?vb/100:vb,dAbs===null?"—":m.isMargin?dAbs/100:dAbs,dPct===null?"—":dPct,signalText(dAbs,m.key)]);
+        });
+      rows.push([]);
+    });
+    const ws1=XLSX.utils.aoa_to_sheet(rows);
+    ws1["!cols"]=[{wch:26},{wch:18},{wch:18},{wch:18},{wch:18},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,ws1,"Analysis");
+    const rawRows=[["Period","Date From","Date To","Bet Count","Bet Amount","GGR","Margin","Players","Bets/Player","Amt/Player"]];
+    d.forEach(p=>rawRows.push([p.label,p.dateFrom||"",p.dateTo||"",p.bets||"",p.amount||"",p.ggr||"",p.margin!==null?p.margin/100:"",p.players||"",p.avgBets||"",p.avgAmt||""]));
+    const ws2=XLSX.utils.aoa_to_sheet(rawRows);
+    ws2["!cols"]=[{wch:22},{wch:12},{wch:12},{wch:14},{wch:14},{wch:12},{wch:10},{wch:12},{wch:18},{wch:18}];
+    XLSX.utils.book_append_sheet(wb,ws2,"Raw Data");
+    XLSX.writeFile(wb,"promo_kpi_analysis.xlsx");
+    st.className="status-msg status-ok"; st.textContent="✓ Downloaded";
+  } catch(e) {
+    st.className="status-msg status-err"; st.textContent="Error: "+e.message;
+  }
+  btns.forEach(b=>b.disabled=false);
+}
+
+applyStoredTheme();
+resetAll();
+</script>
+</body>
+</html>
