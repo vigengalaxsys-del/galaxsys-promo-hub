@@ -529,32 +529,6 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
 </head>
 <body>
 
-  <a href="index.html" style="
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-decoration: none;
-  color: #6b7280;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 20px;
-  padding: 6px 14px 6px 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  transition: color 0.2s, box-shadow 0.2s;
-" onmouseover="this.style.color='#111827';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'"
-   onmouseout="this.style.color='#6b7280';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
-  ← Hub
-</a>
-
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
@@ -965,7 +939,7 @@ function updateEdge() {
 const fmt  = v => '$' + Math.round(v).toLocaleString();
 const fmtN = v => Math.round(v).toLocaleString();
 // Round to nearest integer for display — fix #1
-const fmtBet = v => '$' + Math.round(v).toLocaleString();
+const fmtBet = v => '$' + (+v).toLocaleString('en', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 // ════════════ MISSIONS ════════════
 // Multi-criteria trigger options
@@ -1272,7 +1246,7 @@ function setKpi(id,v,dh){
 function renderCompare(b,p) {
   const rows = [
     {lbl:'Active Players',          bv:fmtN(b.players),  pv:fmtN(p.players),  d:p.players-b.players,    pct:(p.players-b.players)/b.players},
-    {lbl:'Avg Bet Amount / Player / Month', bv:fmtBet(b.avgBet), pv:fmtBet(p.avgBet), d:Math.round(p.avgBet)-Math.round(b.avgBet), pct:(p.avgBet-b.avgBet)/b.avgBet},
+    {lbl:'Avg Bet Amount / Player / Month', bv:fmtBet(b.avgBet), pv:fmtBet(p.avgBet), d:p.avgBet-b.avgBet, pct:(p.avgBet-b.avgBet)/b.avgBet, decimal:true},
     {lbl:'Avg Bet Count / Month',     bv:fmtN(b.avgBetCnt),pv:fmtN(p.avgBetCnt),d:p.avgBetCnt-b.avgBetCnt,pct:(p.avgBetCnt-b.avgBetCnt)/b.avgBetCnt},
     {lbl:'Total Bet Amount',        bv:fmt(b.tba),       pv:fmt(p.tba),       d:p.tba-b.tba,            pct:(p.tba-b.tba)/b.tba},
     {lbl:'Total Bet Count',         bv:fmtN(b.tbc),      pv:fmtN(p.tbc),      d:p.tbc-b.tbc,            pct:(p.tbc-b.tbc)/b.tbc},
@@ -1295,7 +1269,11 @@ function renderCompare(b,p) {
     let dStr='—',pStr='—',cls='c-neu';
     if(r.d!==null){
       cls = r.warn ? 'c-neg' : r.isNet ? (r.d>=0?'c-pos':'c-neg') : (r.d>=0?'c-pos':'c-neg');
-      dStr = (r.d>=0?'+':'') + '$' + Math.round(Math.abs(r.d)).toLocaleString();
+      const absDelta = Math.abs(r.d);
+      const deltaFmt = r.decimal
+        ? (r.d>=0?'+':'-') + '$' + absDelta.toLocaleString('en',{minimumFractionDigits:0,maximumFractionDigits:2})
+        : (r.d>=0?'+':'') + '$' + Math.round(absDelta).toLocaleString();
+      dStr = deltaFmt;
     }
     if(r.pct!==null) pStr = (r.pct>=0?'+':'')+(r.pct*100).toFixed(1)+'%';
     const rs = r.bold?'class="bold-row"':'';
