@@ -529,6 +529,32 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
 </head>
 <body>
 
+  <a href="index.html" style="
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  color: #6b7280;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: color 0.2s, box-shadow 0.2s;
+" onmouseover="this.style.color='#111827';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'"
+   onmouseout="this.style.color='#6b7280';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
+  ← Hub
+</a>
+
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
