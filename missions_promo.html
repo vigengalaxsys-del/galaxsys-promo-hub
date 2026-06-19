@@ -363,37 +363,172 @@ input[type=range]::-webkit-slider-thumb:active { transform: scale(1.2); }
 .c-neg { color: var(--danger); }
 .c-neu { color: var(--text3); }
 
+.mission-qualifier-hint {
+  font-size: 11px;
+  color: var(--accent2);
+  font-style: italic;
+  margin-top: 6px;
+  padding: 6px 10px;
+  background: rgba(96,165,250,.06);
+  border-radius: var(--r-sm);
+  border-left: 2px solid var(--accent2);
+}
+[data-theme="light"] .mission-qualifier-hint { background: rgba(37,99,235,.05); }
+
 hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+/* ── REPEATABLE TOGGLE ── */
+.repeat-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.repeat-toggle-label { flex: 1; min-width: 0; }
+.repeat-toggle-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  display: block;
+  margin-bottom: 2px;
+}
+.repeat-toggle-desc {
+  font-size: 11px;
+  color: var(--text3);
+  display: block;
+  line-height: 1.4;
+}
+.toggle-switch { position: relative; flex-shrink: 0; cursor: pointer; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  display: flex;
+  align-items: center;
+  width: 42px; height: 24px;
+  background: var(--surface3);
+  border: 1.5px solid var(--border2);
+  border-radius: 12px;
+  transition: background .2s, border-color .2s;
+  position: relative;
+}
+.toggle-thumb {
+  position: absolute;
+  left: 3px;
+  width: 16px; height: 16px;
+  background: var(--text3);
+  border-radius: 50%;
+  transition: transform .2s, background .2s;
+}
+.toggle-switch input:checked + .toggle-track {
+  background: rgba(96,165,250,.18);
+  border-color: var(--accent2);
+}
+.toggle-switch input:checked + .toggle-track .toggle-thumb {
+  transform: translateX(18px);
+  background: var(--accent2);
+}
+.repeat-fields-inner {
+  margin-top: 14px;
+  padding: 14px;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+[data-theme="light"] .repeat-toggle-title { color: var(--ink); }
+[data-theme="light"] .toggle-track { background: var(--surface3); }
+[data-theme="light"] .toggle-switch input:checked + .toggle-track { background: rgba(37,99,235,.1); }
+
+/* ── TOOLTIPS ── */
+.tip-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.tip-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text3);
+  font-size: 9px;
+  font-weight: 700;
+  font-style: normal;
+  cursor: default;
+  margin-left: 5px;
+  flex-shrink: 0;
+  transition: background .15s, border-color .15s, color .15s;
+  font-family: var(--sans);
+  line-height: 1;
+  user-select: none;
+}
+.tip-wrap:hover .tip-icon {
+  background: var(--accent2);
+  border-color: var(--accent2);
+  color: #fff;
+}
+.tip-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: var(--r-sm);
+  padding: 10px 13px;
+  width: 230px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text2);
+  line-height: 1.55;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .15s, visibility .15s;
+  z-index: 500;
+  font-family: var(--sans);
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tip-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--border2);
+}
+.tip-bubble::before {
+  content: '';
+  position: absolute;
+  top: 100%; left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--surface);
+  z-index: 1;
+  margin-top: -1px;
+}
+.tip-bubble strong { color: var(--ink); font-weight: 600; }
+.tip-wrap:hover .tip-bubble { opacity: 1; visibility: visible; }
+
+/* keep bubble on-screen when near left/right edges */
+.tip-bubble.tip-left  { left: 0;   transform: none; }
+.tip-bubble.tip-right { left: auto; right: 0; transform: none; }
+.tip-bubble.tip-left::after  { left: 18px; transform: none; }
+.tip-bubble.tip-left::before { left: 19px; transform: none; }
+.tip-bubble.tip-right::after  { left: auto; right: 18px; transform: none; }
+.tip-bubble.tip-right::before { left: auto; right: 19px; transform: none; }
+
+[data-theme="light"] .tip-bubble { box-shadow: 0 6px 20px rgba(0,0,0,.12); }
 </style>
 </head>
 <body>
-<a href="index.html" style="
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-family: 'DM Mono', monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-decoration: none;
-  color: #6b7280;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(0,0,0,0.1);
-  border-radius: 20px;
-  padding: 6px 14px 6px 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  transition: color 0.2s, box-shadow 0.2s;
-" onmouseover="this.style.color='#111827';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'"
-   onmouseout="this.style.color='#6b7280';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
-  ← Hub
-</a>
-  
-  
+
 <!-- TOPBAR -->
 <div class="topbar">
   <div class="topbar-left">
@@ -433,12 +568,12 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
     </div>
     <div class="g2">
       <div class="field">
-        <div class="field-label"><span>Avg Bet Amount</span><small>per player / day</small></div>
-        <div class="input-wrap"><span class="input-pre">$</span><input type="number" id="avgBet" value="25" min="0.01" step="0.01" oninput="calc()"></div>
+        <div class="field-label"><span>Avg Bet Amount</span><small>per player / month</small></div>
+        <div class="input-wrap"><span class="input-pre">$</span><input type="number" id="avgBet" value="750" min="0.01" step="0.01" oninput="calc()"></div>
       </div>
       <div class="field">
-        <div class="field-label"><span>Avg Bet Count</span><small>per player / day</small></div>
-        <div class="input-wrap"><input type="number" id="avgBetCount" value="40" min="1" oninput="calc()"><span class="input-suf">bets</span></div>
+        <div class="field-label"><span>Avg Bet Count</span><small>per player / month</small></div>
+        <div class="input-wrap"><input type="number" id="avgBetCount" value="1200" min="1" oninput="calc()"><span class="input-suf">bets</span></div>
       </div>
     </div>
     <div class="field">
@@ -467,8 +602,8 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
   <div class="form-section">
     <div class="prize-box">
       <div class="prize-box-title">Single Prize — awarded on completing all missions</div>
-      <div class="reward-opts">
-        <div class="reward-opt active" id="ropt-fs" onclick="setReward('freespins')">
+      <div class="reward-opts" style="grid-template-columns:1fr 1fr">
+        <div class="reward-opt active" id="ropt-freespins" onclick="setReward('freespins')">
           <div class="reward-opt-icon">🎰</div>
           <div><div class="reward-opt-name">Free Spins</div><div class="reward-opt-desc">Bonus spin rounds</div></div>
         </div>
@@ -476,8 +611,52 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
           <div class="reward-opt-icon">💵</div>
           <div><div class="reward-opt-name">Real Money</div><div class="reward-opt-desc">Cash to wallet</div></div>
         </div>
+        <div class="reward-opt" id="ropt-freeamount" onclick="setReward('freeamount')">
+          <div class="reward-opt-icon">🎁</div>
+          <div><div class="reward-opt-name">Free Amount</div><div class="reward-opt-desc">Bonus balance, wagering may apply</div></div>
+        </div>
+        <div class="reward-opt" id="ropt-cashback" onclick="setReward('cashback')">
+          <div class="reward-opt-icon">🔄</div>
+          <div><div class="reward-opt-name">Cashback</div><div class="reward-opt-desc">% of net losses returned</div></div>
+        </div>
       </div>
       <div id="prizeFields"></div>
+
+      <!-- REPEATABLE TOGGLE -->
+      <div class="repeat-toggle-row">
+        <div class="repeat-toggle-label">
+          <span class="repeat-toggle-title">🔁 Repeatable Missions</span>
+          <span class="repeat-toggle-desc">Player can restart and complete missions again after each win</span>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="repeatToggle" onchange="toggleRepeat();calc()">
+          <span class="toggle-track"><span class="toggle-thumb"></span></span>
+        </label>
+      </div>
+
+      <div id="repeatFields" style="display:none;">
+        <div class="repeat-fields-inner">
+          <div class="slider-field" style="margin-bottom:12px">
+            <div class="slider-top">
+              <span class="slider-label">Avg Completions per Winner</span>
+              <span class="slider-val-badge" id="v-repeats">2×</span>
+            </div>
+            <input type="range" id="avgRepeats" min="1.1" max="10" step="0.1" value="2"
+              oninput="document.getElementById('v-repeats').textContent=(+this.value).toFixed(1)+'×';calc()">
+            <div class="slider-ends"><span>1.1× — rare repeats</span><span>10× — frequent repeats</span></div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <div class="field-label">
+              <span>Max completions per player</span>
+              <small>0 = unlimited</small>
+            </div>
+            <div class="input-wrap">
+              <input type="number" id="maxRepeats" value="0" min="0" step="1" oninput="calc()">
+              <span class="input-suf">times</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -537,48 +716,126 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
     <div class="section-rule">ROI Summary <div class="line"></div></div>
     <div class="roi-hero">
       <div>
-        <div class="roi-eyebrow">Net Incremental GGR (after promo cost)</div>
+        <div class="roi-eyebrow">
+          <span class="tip-wrap">
+            Net Incremental GGR (after promo cost)
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble tip-left"><strong>Net Incremental GGR</strong><br>The true profit impact of the promo — extra revenue generated minus what was spent on prizes.<br><br>Formula: Incremental GGR − Total Prize Cost<br><br><strong>Positive</strong> = promo is profitable. <strong>Negative</strong> = cost exceeds gain.</span>
+          </span>
+        </div>
         <div class="roi-big positive" id="roi-big">—</div>
         <div class="roi-sub" id="roi-sub">—</div>
       </div>
       <div class="roi-divider"></div>
       <div class="roi-stats">
-        <div><div class="rst-label">Incremental GGR</div><div class="rst-val" id="roi-incr">—</div></div>
-        <div><div class="rst-label">Total Prize Cost</div><div class="rst-val" id="roi-cost">—</div></div>
-        <div><div class="rst-label">Return on Spend</div><div class="rst-val" id="roi-ratio">—</div></div>
-        <div><div class="rst-label">Prize Winners</div><div class="rst-val" id="roi-winners">—</div></div>
+        <div>
+          <div class="rst-label">
+            <span class="tip-wrap">
+              Incremental GGR
+              <i class="tip-icon">i</i>
+              <span class="tip-bubble tip-left"><strong>Incremental GGR</strong><br>Extra revenue generated specifically because of the promo — the difference between promoted GGR and baseline GGR.<br><br>Formula: Promoted GGR − Baseline GGR</span>
+            </span>
+          </div>
+          <div class="rst-val" id="roi-incr">—</div>
+        </div>
+        <div>
+          <div class="rst-label">
+            <span class="tip-wrap">
+              Total Prize Cost
+              <i class="tip-icon">i</i>
+              <span class="tip-bubble"><strong>Total Prize Cost</strong><br>Total budget spent on prizes. Equal to the number of players who complete all missions multiplied by the prize value.</span>
+            </span>
+          </div>
+          <div class="rst-val" id="roi-cost">—</div>
+        </div>
+        <div>
+          <div class="rst-label">
+            <span class="tip-wrap">
+              Return on Spend
+              <i class="tip-icon">i</i>
+              <span class="tip-bubble tip-left"><strong>Return on Spend (ROAS)</strong><br>How much incremental GGR is generated for every $1 spent on prizes.<br><br>Formula: Incremental GGR ÷ Prize Cost × 100<br><br>Example: 300% means $3 earned per $1 spent.</span>
+            </span>
+          </div>
+          <div class="rst-val" id="roi-ratio">—</div>
+        </div>
+        <div>
+          <div class="rst-label">
+            <span class="tip-wrap">
+              Prize Winners
+              <i class="tip-icon">i</i>
+              <span class="tip-bubble tip-right"><strong>Prize Winners</strong><br>Estimated number of players who will complete all missions and receive the prize.<br><br>Formula: Active Players × Participation Rate × Completion Rate</span>
+            </span>
+          </div>
+          <div class="rst-val" id="roi-winners">—</div>
+        </div>
       </div>
     </div>
 
     <div class="section-rule">Key Performance Indicators <div class="line"></div></div>
     <div class="kpi-row">
       <div class="kpi-card accent-green">
-        <div class="kpi-label">💰 Total GGR</div>
+        <div class="kpi-label">
+          💰 Total GGR
+          <span class="tip-wrap">
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble tip-left"><strong>Gross Gaming Revenue</strong><br>Total money the game retains after paying out winnings.<br><br>Formula: Total Bet Amount × House Edge (1 − RTP)</span>
+          </span>
+        </div>
         <div class="kpi-value" id="kpi-ggr">—</div>
         <div class="kpi-delta" id="kpi-ggr-d">vs baseline</div>
       </div>
       <div class="kpi-card accent-blue">
-        <div class="kpi-label">💳 Total Bet Amount</div>
+        <div class="kpi-label">
+          💳 Total Bet Amount
+          <span class="tip-wrap">
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble"><strong>Total Bet Amount</strong><br>Sum of all bets placed by all players during the promo period.<br><br>Formula: Players × (Avg Monthly Bet ÷ 30) × Days</span>
+          </span>
+        </div>
         <div class="kpi-value" id="kpi-tba">—</div>
         <div class="kpi-delta" id="kpi-tba-d">vs baseline</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">🎲 Total Bet Count</div>
+        <div class="kpi-label">
+          🎲 Total Bet Count
+          <span class="tip-wrap">
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble tip-right"><strong>Total Bet Count</strong><br>Total number of individual bets placed across all players in the period.<br><br>Formula: Players × (Avg Monthly Bets ÷ 30) × Days</span>
+          </span>
+        </div>
         <div class="kpi-value" id="kpi-tbc">—</div>
         <div class="kpi-delta" id="kpi-tbc-d">vs baseline</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">👤 Avg Bet / Player</div>
+        <div class="kpi-label">
+          👤 Avg Bet / Player
+          <span class="tip-wrap">
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble tip-left"><strong>Average Bet Amount per Player</strong><br>How much money an individual player bets per month on average.<br><br>Missions aim to increase this by motivating players to bet more per session.</span>
+          </span>
+        </div>
         <div class="kpi-value" id="kpi-abp">—</div>
         <div class="kpi-delta" id="kpi-abp-d">vs baseline</div>
       </div>
       <div class="kpi-card">
-        <div class="kpi-label">👥 Active Players</div>
+        <div class="kpi-label">
+          👥 Active Players
+          <span class="tip-wrap">
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble"><strong>Active Players</strong><br>Total players in the promoted period, including any newly acquired players driven by the promo.<br><br>Formula: Baseline Players × (1 + New Player Lift)</span>
+          </span>
+        </div>
         <div class="kpi-value" id="kpi-players">—</div>
         <div class="kpi-delta" id="kpi-players-d">vs baseline</div>
       </div>
       <div class="kpi-card accent-orange">
-        <div class="kpi-label">💸 Total Prize Cost</div>
+        <div class="kpi-label">
+          💸 Total Prize Cost
+          <span class="tip-wrap">
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble tip-right"><strong>Total Prize Cost</strong><br>The full monetary cost of distributing prizes to all mission completers.<br><br>Formula: Prize Winners × Prize Value<br><br>This is subtracted from incremental GGR to calculate Net ROI.</span>
+          </span>
+        </div>
         <div class="kpi-value" id="kpi-cost">—</div>
         <div class="kpi-delta neutral" id="kpi-cost-d">prize winners × prize value</div>
       </div>
@@ -586,18 +843,36 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
 
     <div class="section-rule">GGR Over Time <div class="line"></div></div>
     <div class="chart-card">
-      <div class="chart-card-title">📅 Cumulative GGR — Baseline vs Promoted</div>
+      <div class="chart-card-title">
+        📅 Cumulative GGR — Baseline vs Promoted
+        <span class="tip-wrap">
+          <i class="tip-icon">i</i>
+          <span class="tip-bubble tip-left"><strong>Cumulative GGR over time</strong><br>Shows how GGR builds up day by day. The gap between the two lines is the incremental revenue the promo is generating. A widening gap = the promo is working.</span>
+        </span>
+      </div>
       <div class="chart-card-sub">Running total over the promo period. The gap between lines is incremental GGR driven by the mission.</div>
       <div class="chart-wrap" style="height:220px"><canvas id="chartMain"></canvas></div>
     </div>
     <div class="chart-row">
       <div class="chart-card">
-        <div class="chart-card-title">📊 Incremental GGR vs Cost</div>
+        <div class="chart-card-title">
+          📊 Incremental GGR vs Cost
+          <span class="tip-wrap">
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble tip-left"><strong>GGR vs Cost comparison</strong><br>Compares three values side by side:<br>• <strong>Incremental GGR</strong> — extra revenue from promo<br>• <strong>Prize Cost</strong> — total prize budget spent<br>• <strong>Net ROI</strong> — what's left after costs</span>
+          </span>
+        </div>
         <div class="chart-card-sub">Is the promo paying for itself?</div>
         <div class="chart-wrap"><canvas id="chartBar"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="chart-card-title">🥧 Net Profit vs Prize Cost</div>
+        <div class="chart-card-title">
+          🥧 Net Profit vs Prize Cost
+          <span class="tip-wrap">
+            <i class="tip-icon">i</i>
+            <span class="tip-bubble tip-right"><strong>Profit vs Cost split</strong><br>Shows what share of incremental GGR you keep vs. what goes to prizes.<br><br>A larger green slice = better promo efficiency.</span>
+          </span>
+        </div>
         <div class="chart-card-sub">Share of incremental GGR retained</div>
         <div class="chart-wrap"><canvas id="chartDonut"></canvas></div>
       </div>
@@ -621,7 +896,13 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
       <div id="missionsTbl"></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-title">🏆 Prize Funnel</div>
+      <div class="chart-card-title">
+        🏆 Prize Funnel
+        <span class="tip-wrap">
+          <i class="tip-icon">i</i>
+          <span class="tip-bubble tip-left"><strong>Prize Funnel</strong><br>Shows player drop-off at each stage:<br><br>• <strong>Total Players</strong> — all active players in the period<br>• <strong>Participating</strong> — those who opt in (× Participation Rate)<br>• <strong>Prize Winners</strong> — those who complete all missions (× Completion Rate)<br><br>A steeper drop means fewer winners and lower prize cost.</span>
+        </span>
+      </div>
       <div class="chart-card-sub">From total players → participants → prize winners</div>
       <div class="chart-wrap" style="height:180px"><canvas id="chartFunnel"></canvas></div>
     </div>
@@ -634,22 +915,13 @@ hr.div { border: none; border-top: 1px solid var(--border); margin: 0; }
 <script>
 // ════════════ STATE ════════════
 let missions = [
-  { type:'betAmount', target: 500  },
-  { type:'betCount',  target: 100  },
+  { type:'betCount',  target: 5,   qualifier:'minBetAmt', qualifierVal:3 },
+  { type:'winCoef',   target: 2,   qualifier:null,        qualifierVal:null },
 ];
 let rewardType = 'freespins';
 let scenario   = 'base';
 let isLight    = false;
 let charts     = {};
-
-const TRIGGER_OPTS = [
-  { value:'betAmount', label:'💰 Min Total Bet Amount ($)' },
-  { value:'betCount',  label:'🎲 Min Number of Bets' },
-  { value:'winCoef',   label:'⚡ Min Win Multiplier (×)' },
-  { value:'winAmount', label:'🏆 Min Win Amount ($)' },
-];
-const TRIGGER_UNIT = { betAmount:'$', betCount:'bets', winCoef:'×', winAmount:'$' };
-const TRIGGER_NAME = { betAmount:'Min Bet Amount', betCount:'Min Bet Count', winCoef:'Min Win Coef', winAmount:'Min Win Amount' };
 
 const SC_MULTI = {
   bear: { part:.6,  comp:.55, bLift:.5,  cLift:.5,  pLift:.4  },
@@ -666,8 +938,28 @@ function updateEdge() {
 }
 const fmt  = v => '$' + Math.round(v).toLocaleString();
 const fmtN = v => Math.round(v).toLocaleString();
+// Round to nearest integer for display — fix #1
+const fmtBet = v => '$' + Math.round(v).toLocaleString();
 
 // ════════════ MISSIONS ════════════
+// Multi-criteria trigger options
+const TRIGGER_OPTS = [
+  { value:'betCount',  label:'🎲 Min Number of Bets' },
+  { value:'betAmount', label:'💰 Min Total Bet Amount ($)' },
+  { value:'winCoef',   label:'⚡ Min Win Multiplier (×)' },
+  { value:'winAmount', label:'🏆 Min Win Amount ($)' },
+];
+const TRIGGER_UNIT = { betAmount:'$', betCount:'', winCoef:'×', winAmount:'$' };
+const TRIGGER_NAME = { betAmount:'Min Bet Amount', betCount:'Min Bet Count', winCoef:'Min Win Coef', winAmount:'Min Win Amount' };
+
+// Extra qualifier options for multi-criteria
+const QUALIFIER_OPTS = {
+  betCount:  [{ value:'minBetAmt', label:'with min bet amount ($)' }, { value:'minWinCoef', label:'with min win coefficient (×)' }],
+  betAmount: [],
+  winCoef:   [{ value:'minBetAmt', label:'with min bet amount ($)' }],
+  winAmount: [{ value:'minBetAmt', label:'with min bet amount ($)' }],
+};
+
 function renderMissions() {
   const el = document.getElementById('missionsList');
   el.innerHTML = '';
@@ -675,7 +967,47 @@ function renderMissions() {
     const optHtml = TRIGGER_OPTS.map(o =>
       `<option value="${o.value}"${m.type===o.value?' selected':''}>${o.label}</option>`
     ).join('');
-    const unit = TRIGGER_UNIT[m.type];
+    const qualOpts = QUALIFIER_OPTS[m.type] || [];
+    const hasQual  = qualOpts.length > 0;
+    const unit     = TRIGGER_UNIT[m.type];
+    const prefix   = (m.type==='betAmount'||m.type==='winAmount') ? '$' : '';
+    const suffix   = m.type==='winCoef' ? '×' : (m.type==='betCount' ? ' bets' : '');
+
+    // qualifier select html
+    const qualSelectHtml = hasQual ? `
+      <div class="mission-field" style="margin-top:8px">
+        <label>Add a condition (optional)</label>
+        <select onchange="missions[${i}].qualifier=this.value==='none'?null:this.value;renderMissions();calc()">
+          <option value="none"${!m.qualifier?' selected':''}>— No extra condition —</option>
+          ${qualOpts.map(q=>`<option value="${q.value}"${m.qualifier===q.value?' selected':''}>${q.label}</option>`).join('')}
+        </select>
+      </div>` : '';
+
+    // qualifier value field
+    let qualValHtml = '';
+    if (m.qualifier === 'minBetAmt') {
+      qualValHtml = `<div class="mission-field" style="margin-top:8px">
+        <label>Min bet amount per bet ($)</label>
+        <input type="number" value="${m.qualifierVal||1}" min="0.01" step="0.01"
+          oninput="missions[${i}].qualifierVal=+this.value;calc()">
+      </div>`;
+    } else if (m.qualifier === 'minWinCoef') {
+      qualValHtml = `<div class="mission-field" style="margin-top:8px">
+        <label>Min win coefficient (×)</label>
+        <input type="number" value="${m.qualifierVal||2}" min="1.01" step="0.1"
+          oninput="missions[${i}].qualifierVal=+this.value;calc()">
+      </div>`;
+    }
+
+    // plain-English summary
+    let summary = '';
+    if (m.type === 'betCount')  summary = `Make <strong>${m.target}</strong> bet${m.target!==1?'s':''}`;
+    if (m.type === 'betAmount') summary = `Place bets totalling <strong>$${m.target}</strong>`;
+    if (m.type === 'winCoef')   summary = `Win with a multiplier of <strong>${m.target}×</strong> or more`;
+    if (m.type === 'winAmount') summary = `Win at least <strong>$${m.target}</strong>`;
+    if (m.qualifier === 'minBetAmt')  summary += `, each bet ≥ <strong>$${m.qualifierVal||1}</strong>`;
+    if (m.qualifier === 'minWinCoef') summary += `, win coef ≥ <strong>${m.qualifierVal||2}×</strong>`;
+
     const div = document.createElement('div');
     div.className = 'mission-card';
     div.innerHTML = `
@@ -685,14 +1017,20 @@ function renderMissions() {
         <button class="remove-mission-btn" onclick="removeMission(${i})" title="Remove">×</button>
       </div>
       <div class="mission-body">
-        <div class="mission-field">
-          <label>What must the player achieve?</label>
-          <select onchange="missions[${i}].type=this.value;renderMissions();calc()">${optHtml}</select>
+        <div class="mission-row">
+          <div class="mission-field">
+            <label>Player must achieve</label>
+            <select onchange="missions[${i}].type=this.value;missions[${i}].qualifier=null;renderMissions();calc()">${optHtml}</select>
+          </div>
+          <div class="mission-field">
+            <label>Target${unit?' ('+unit+')':''}</label>
+            <input type="number" value="${m.target}" min="0.01" step="${m.type==='betCount'?1:0.01}"
+              oninput="missions[${i}].target=+this.value;calc()">
+          </div>
         </div>
-        <div class="mission-field">
-          <label>Target threshold (${unit})</label>
-          <input type="number" value="${m.target}" min="1" oninput="missions[${i}].target=+this.value;calc()">
-        </div>
+        ${qualSelectHtml}
+        ${qualValHtml}
+        ${summary ? `<div class="mission-qualifier-hint">📋 ${summary}</div>` : ''}
       </div>`;
     el.appendChild(div);
   });
@@ -700,7 +1038,7 @@ function renderMissions() {
 
 function addMission() {
   if (missions.length >= 6) return;
-  missions.push({ type:'betAmount', target:500 });
+  missions.push({ type:'betCount', target:10, qualifier:null, qualifierVal:null });
   renderMissions(); calc();
 }
 function removeMission(i) {
@@ -711,29 +1049,47 @@ function removeMission(i) {
 // ════════════ PRIZE ════════════
 function setReward(type) {
   rewardType = type;
-  document.getElementById('ropt-fs').classList.toggle('active', type==='freespins');
-  document.getElementById('ropt-cash').classList.toggle('active', type==='cash');
+  ['freespins','cash','freeamount','cashback'].forEach(t => {
+    const el = document.getElementById('ropt-'+t);
+    if (el) el.classList.toggle('active', t===type);
+  });
   renderPrizeFields(); calc();
 }
 function renderPrizeFields() {
   const el = document.getElementById('prizeFields');
   if (rewardType === 'freespins') {
     el.innerHTML = `
-      <div class="g2" style="margin-bottom:0">
-        <div class="field" style="margin-bottom:0">
-          <div class="field-label"><span>Number of Free Spins</span></div>
-          <div class="input-wrap"><input type="number" id="prizeFS" value="50" min="1" oninput="calc()"><span class="input-suf">spins</span></div>
-        </div>
-        <div class="field" style="margin-bottom:0">
-          <div class="field-label"><span>Value per Spin</span></div>
-          <div class="input-wrap"><span class="input-pre">$</span><input type="number" id="prizeFSVal" value="0.10" min="0.01" step="0.01" oninput="calc()"></div>
-        </div>
+      <div class="field" style="margin-bottom:10px">
+        <div class="field-label"><span>Number of Free Spins</span></div>
+        <div class="input-wrap"><input type="number" id="prizeFS" value="50" min="1" oninput="calc()"><span class="input-suf">spins</span></div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <div class="field-label"><span>Value per Spin</span></div>
+        <div class="input-wrap"><span class="input-pre">$</span><input type="number" id="prizeFSVal" value="0.10" min="0.01" step="0.01" oninput="calc()"><span class="input-suf">/ spin</span></div>
       </div>`;
-  } else {
+  } else if (rewardType === 'cash') {
     el.innerHTML = `
       <div class="field" style="margin-bottom:0">
         <div class="field-label"><span>Cash Prize Amount</span></div>
         <div class="input-wrap"><span class="input-pre">$</span><input type="number" id="prizeCash" value="10" min="0.01" step="0.5" oninput="calc()"></div>
+      </div>`;
+  } else if (rewardType === 'freeamount') {
+    el.innerHTML = `
+      <div class="field" style="margin-bottom:0">
+        <div class="field-label"><span>Free Amount</span><small>bonus balance</small></div>
+        <div class="input-wrap"><span class="input-pre">$</span><input type="number" id="prizeFreeAmt" value="10" min="0.01" step="0.5" oninput="calc()"></div>
+        <div class="field-hint">Player receives this as bonus balance. Partners may apply wagering requirements.</div>
+      </div>`;
+  } else if (rewardType === 'cashback') {
+    el.innerHTML = `
+      <div class="field" style="margin-bottom:10px">
+        <div class="field-label"><span>Cashback %</span><small>of net losses</small></div>
+        <div class="input-wrap"><input type="number" id="prizeCashbackPct" value="10" min="1" max="100" step="1" oninput="calc()"><span class="input-suf">%</span></div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <div class="field-label"><span>Estimated avg net loss / player</span></div>
+        <div class="input-wrap"><span class="input-pre">$</span><input type="number" id="prizeCashbackLoss" value="50" min="1" step="1" oninput="calc()"></div>
+        <div class="field-hint">Used to estimate total cashback cost. Actual cost depends on player losses during the promo.</div>
       </div>`;
   }
 }
@@ -743,7 +1099,14 @@ function getPrizeValue() {
     const val   = +document.getElementById('prizeFSVal')?.value || 0.1;
     return spins * val;
   }
-  return +document.getElementById('prizeCash')?.value || 10;
+  if (rewardType === 'cash')       return +document.getElementById('prizeCash')?.value      || 10;
+  if (rewardType === 'freeamount') return +document.getElementById('prizeFreeAmt')?.value   || 10;
+  if (rewardType === 'cashback') {
+    const pct  = (+document.getElementById('prizeCashbackPct')?.value  || 10) / 100;
+    const loss = +document.getElementById('prizeCashbackLoss')?.value  || 50;
+    return pct * loss;
+  }
+  return 0;
 }
 function getPrizeLabel() {
   if (rewardType === 'freespins') {
@@ -751,8 +1114,13 @@ function getPrizeLabel() {
     const val   = +document.getElementById('prizeFSVal')?.value || 0.1;
     return `${spins} Free Spins ($${(spins*val).toFixed(2)})`;
   }
-  const c = +document.getElementById('prizeCash')?.value || 10;
-  return `$${c} Cash`;
+  if (rewardType === 'cash')       return `$${+document.getElementById('prizeCash')?.value || 10} Cash`;
+  if (rewardType === 'freeamount') return `$${+document.getElementById('prizeFreeAmt')?.value || 10} Free Amount`;
+  if (rewardType === 'cashback') {
+    const pct = +document.getElementById('prizeCashbackPct')?.value || 10;
+    return `${pct}% Cashback (~${fmt(getPrizeValue())} est.)`;
+  }
+  return '—';
 }
 
 // ════════════ SCENARIO ════════════
@@ -764,14 +1132,21 @@ function setScenario(s) {
   calc();
 }
 
+// ════════════ REPEAT TOGGLE ════════════
+function toggleRepeat() {
+  const on = document.getElementById('repeatToggle').checked;
+  document.getElementById('repeatFields').style.display = on ? 'block' : 'none';
+  calc();
+}
+
 // ════════════ MAIN CALC ════════════
 function calc() {
   const sc = SC_MULTI[scenario];
-  const players    = +document.getElementById('players').value    || 0;
-  const days       = +document.getElementById('days').value       || 1;
-  const avgBet     = +document.getElementById('avgBet').value     || 0;
-  const avgBetCnt  = +document.getElementById('avgBetCount').value|| 0;
-  const rtp        = +document.getElementById('rtp').value        || 96;
+  const players       = +document.getElementById('players').value     || 0;
+  const days          = +document.getElementById('days').value        || 1;
+  const avgBetMonth   = +document.getElementById('avgBet').value      || 0;
+  const avgBetCntMonth= +document.getElementById('avgBetCount').value || 0;
+  const rtp           = +document.getElementById('rtp').value         || 96;
   const part  = Math.min(1,(+document.getElementById('participation').value/100)*sc.part);
   const comp  = Math.min(1,(+document.getElementById('completion').value/100)*sc.comp);
   const bLift = (+document.getElementById('betLift').value/100)*sc.bLift;
@@ -780,25 +1155,43 @@ function calc() {
   const houseEdge = (100-rtp)/100;
   const prizeVal  = getPrizeValue();
 
+  // Convert monthly averages → per-day, then scale by actual promo duration
+  const avgBetDay     = avgBetMonth    / 30;
+  const avgBetCntDay  = avgBetCntMonth / 30;
+
   // BASELINE
   const b_players   = players;
-  const b_tba       = b_players * avgBet    * days;
-  const b_tbc       = b_players * avgBetCnt * days;
+  const b_tba       = b_players * avgBetDay    * days;
+  const b_tbc       = b_players * avgBetCntDay * days;
   const b_ggr       = b_tba * houseEdge;
 
   // PROMOTED
-  const p_players   = Math.round(players * (1+pLift));
-  const p_avgBet    = avgBet    * (1+bLift);
-  const p_avgBetCnt = avgBetCnt * (1+cLift);
-  const p_tba       = p_players * p_avgBet    * days;
-  const p_tbc       = p_players * p_avgBetCnt * days;
-  const p_ggr       = p_tba * houseEdge;
-  const participating = Math.round(p_players * part);
-  const winners       = Math.round(participating * comp);
-  const totalCost     = winners * prizeVal;
-  const incrGGR       = p_ggr - b_ggr;
-  const netROI        = incrGGR - totalCost;
-  const ror           = totalCost > 0 ? (incrGGR/totalCost*100).toFixed(1) : '∞';
+  const p_players      = Math.round(players * (1+pLift));
+  const p_avgBetDay    = avgBetDay    * (1+bLift);
+  const p_avgBetCntDay = avgBetCntDay * (1+cLift);
+  // Expose promoted monthly averages for KPIs (more intuitive for admin)
+  const p_avgBetMonth  = p_avgBetDay    * 30;
+  const p_avgBetCntMonth= p_avgBetCntDay* 30;
+  const p_tba          = p_players * p_avgBetDay    * days;
+  const p_tbc          = p_players * p_avgBetCntDay * days;
+  const p_ggr          = p_tba * houseEdge;
+  const participating  = Math.round(p_players * part);
+  const winners        = Math.round(participating * comp);
+
+  // Repeatable logic
+  const isRepeatable = document.getElementById('repeatToggle')?.checked || false;
+  const avgRepeats   = isRepeatable ? Math.max(1, +document.getElementById('avgRepeats')?.value || 2) : 1;
+  const maxRepeats   = isRepeatable ? (+document.getElementById('maxRepeats')?.value || 0) : 1;
+  // Effective avg completions per winner (capped if cap > 0)
+  const effRepeats   = isRepeatable
+    ? (maxRepeats > 0 ? Math.min(avgRepeats, maxRepeats) : avgRepeats)
+    : 1;
+  const totalCompletions = Math.round(winners * effRepeats); // total prize payouts
+  const totalCost        = totalCompletions * prizeVal;
+
+  const incrGGR  = p_ggr - b_ggr;
+  const netROI   = incrGGR - totalCost;
+  const ror      = totalCost > 0 ? (incrGGR/totalCost*100).toFixed(1) : '∞';
 
   // ── KPIs ──
   const dHtml = (pv,bv) => {
@@ -806,12 +1199,15 @@ function calc() {
     const cls = d>=0?'up':'down', sym = d>=0?'▲':'▼', sign = d>=0?'+':'';
     return `<span class="kpi-delta ${cls}">${sym} ${sign}${p}% vs baseline</span>`;
   };
-  setKpi('kpi-ggr',     fmt(p_ggr),       dHtml(p_ggr,    b_ggr));
-  setKpi('kpi-tba',     fmt(p_tba),       dHtml(p_tba,    b_tba));
-  setKpi('kpi-tbc',     fmtN(p_tbc),      dHtml(p_tbc,    b_tbc));
-  setKpi('kpi-abp',     fmt(p_avgBet),    dHtml(p_avgBet, avgBet));
-  setKpi('kpi-players', fmtN(p_players),  dHtml(p_players,b_players));
-  setKpi('kpi-cost',    fmt(totalCost),   `<span class="kpi-delta neutral">${fmtN(winners)} winners × ${fmt(prizeVal)}</span>`);
+  setKpi('kpi-ggr',     fmt(p_ggr),           dHtml(p_ggr,       b_ggr));
+  setKpi('kpi-tba',     fmt(p_tba),           dHtml(p_tba,       b_tba));
+  setKpi('kpi-tbc',     fmtN(p_tbc),          dHtml(p_tbc,       b_tbc));
+  setKpi('kpi-abp',     fmtBet(p_avgBetMonth),   dHtml(p_avgBetMonth, avgBetMonth));
+  setKpi('kpi-players', fmtN(p_players),      dHtml(p_players,   b_players));
+  const costSubline = isRepeatable
+    ? `<span class="kpi-delta neutral">${fmtN(winners)} winners × ${effRepeats.toFixed(1)}× avg = ${fmtN(totalCompletions)} payouts</span>`
+    : `<span class="kpi-delta neutral">${fmtN(winners)} winners × ${fmt(prizeVal)}</span>`;
+  setKpi('kpi-cost', fmt(totalCost), costSubline);
 
   // ── ROI Hero ──
   const roiEl = document.getElementById('roi-big');
@@ -820,24 +1216,25 @@ function calc() {
   document.getElementById('roi-sub').textContent = netROI>=0
     ? `Profitable over ${days} days — incremental GGR covers the prize budget`
     : `⚠ Prize cost exceeds incremental GGR — lower the prize value or raise the mission thresholds`;
-  document.getElementById('roi-incr').textContent = fmt(incrGGR);
-  document.getElementById('roi-cost').textContent = fmt(totalCost);
-  document.getElementById('roi-ratio').textContent = ror + (ror!=='∞'?'% ROAS':'');
-  document.getElementById('roi-winners').textContent = fmtN(winners) + ' players';
+  document.getElementById('roi-incr').textContent    = fmt(incrGGR);
+  document.getElementById('roi-cost').textContent    = fmt(totalCost);
+  document.getElementById('roi-ratio').textContent   = ror + (ror!=='∞'?'% ROAS':'');
+  document.getElementById('roi-winners').textContent = isRepeatable
+    ? `${fmtN(winners)} players · ${fmtN(totalCompletions)} payouts`
+    : `${fmtN(winners)} players`;
 
   // ── Charts ──
   drawMain(b_ggr, p_ggr, days);
   drawBar(incrGGR, totalCost);
   drawDonut(incrGGR, totalCost);
-  drawFunnel(p_players, participating, winners);
+  drawFunnel(p_players, participating, winners, isRepeatable ? totalCompletions : null);
 
   // ── Compare ──
-  renderCompare({players:b_players,avgBet,avgBetCnt,tba:b_tba,tbc:b_tbc,ggr:b_ggr},
-                {players:p_players,avgBet:p_avgBet,avgBetCnt:p_avgBetCnt,tba:p_tba,tbc:p_tbc,ggr:p_ggr,
-                 participating,winners,cost:totalCost,net:netROI,prizeLabel:getPrizeLabel()});
-
-  // ── Missions tab ──
-  renderMissionsTable(participating, winners, prizeVal);
+  renderCompare({players:b_players, avgBet:avgBetMonth, avgBetCnt:avgBetCntMonth, tba:b_tba, tbc:b_tbc, ggr:b_ggr},
+                {players:p_players, avgBet:p_avgBetMonth, avgBetCnt:p_avgBetCntMonth, tba:p_tba, tbc:p_tbc, ggr:p_ggr,
+                 participating, winners, totalCompletions, effRepeats, isRepeatable,
+                 cost:totalCost, net:netROI, prizeLabel:getPrizeLabel()});
+  renderMissionsTable(participating, winners, totalCompletions, effRepeats, isRepeatable, prizeVal);
 }
 
 function setKpi(id,v,dh){
@@ -849,14 +1246,16 @@ function setKpi(id,v,dh){
 function renderCompare(b,p) {
   const rows = [
     {lbl:'Active Players',          bv:fmtN(b.players),  pv:fmtN(p.players),  d:p.players-b.players,    pct:(p.players-b.players)/b.players},
-    {lbl:'Avg Bet Amount / Player', bv:fmt(b.avgBet),    pv:fmt(p.avgBet),    d:p.avgBet-b.avgBet,      pct:(p.avgBet-b.avgBet)/b.avgBet},
-    {lbl:'Avg Bet Count / Day',     bv:fmtN(b.avgBetCnt),pv:fmtN(p.avgBetCnt),d:p.avgBetCnt-b.avgBetCnt,pct:(p.avgBetCnt-b.avgBetCnt)/b.avgBetCnt},
+    {lbl:'Avg Bet Amount / Player / Month', bv:fmtBet(b.avgBet), pv:fmtBet(p.avgBet), d:Math.round(p.avgBet)-Math.round(b.avgBet), pct:(p.avgBet-b.avgBet)/b.avgBet},
+    {lbl:'Avg Bet Count / Month',     bv:fmtN(b.avgBetCnt),pv:fmtN(p.avgBetCnt),d:p.avgBetCnt-b.avgBetCnt,pct:(p.avgBetCnt-b.avgBetCnt)/b.avgBetCnt},
     {lbl:'Total Bet Amount',        bv:fmt(b.tba),       pv:fmt(p.tba),       d:p.tba-b.tba,            pct:(p.tba-b.tba)/b.tba},
     {lbl:'Total Bet Count',         bv:fmtN(b.tbc),      pv:fmtN(p.tbc),      d:p.tbc-b.tbc,            pct:(p.tbc-b.tbc)/b.tbc},
     {lbl:'Game GGR',                bv:fmt(b.ggr),       pv:fmt(p.ggr),       d:p.ggr-b.ggr,            pct:(p.ggr-b.ggr)/b.ggr,   bold:true},
     {lbl:'Participants (promo)',     bv:'—',              pv:fmtN(p.participating), d:null,pct:null,sub:true},
-    {lbl:'Prize Winners',           bv:'—',              pv:fmtN(p.winners),  d:null, pct:null, sub:true},
-    {lbl:'Prize per Winner',        bv:'$0',             pv:p.prizeLabel,     d:null, pct:null, sub:true},
+    {lbl:'Unique Prize Winners',    bv:'—',              pv:fmtN(p.winners),  d:null, pct:null, sub:true},
+    ...(p.isRepeatable ? [{lbl:'Avg Completions / Winner', bv:'1×', pv:p.effRepeats.toFixed(1)+'×', d:null, pct:null, sub:true}] : []),
+    ...(p.isRepeatable ? [{lbl:'Total Prize Payouts',     bv:'—',  pv:fmtN(p.totalCompletions),     d:null, pct:null, sub:true}] : []),
+    {lbl:'Prize per Completion',    bv:'$0',             pv:p.prizeLabel,     d:null, pct:null, sub:true},
     {lbl:'Total Prize Cost',        bv:'$0',             pv:fmt(p.cost),      d:p.cost, pct:null, warn:true},
     {lbl:'Net Incremental GGR',     bv:'$0',             pv:fmt(p.net),       d:p.net,  pct:null, bold:true, isNet:true},
   ];
@@ -883,24 +1282,35 @@ function renderCompare(b,p) {
 }
 
 // ════════════ MISSIONS TABLE ════════════
-function renderMissionsTable(participating, winners, prizeVal) {
+function renderMissionsTable(participating, winners, totalCompletions, effRepeats, isRepeatable, prizeVal) {
   let h = `<table class="missions-tbl">
     <thead><tr>
-      <th>#</th><th>Trigger Type</th><th>Target</th>
+      <th>#</th><th>Goal</th><th>Condition</th><th>Target</th>
       <th style="text-align:right">Est. Participants</th>
-      <th style="text-align:right">Prize Winners</th>
+      <th style="text-align:right">Unique Winners</th>
+      ${isRepeatable ? '<th style="text-align:right">Avg Repeats</th><th style="text-align:right">Total Payouts</th>' : ''}
       <th style="text-align:right">Prize Cost</th>
     </tr></thead><tbody>`;
   missions.forEach((m,i) => {
     const unit = TRIGGER_UNIT[m.type];
     const name = TRIGGER_NAME[m.type];
+    const targetStr = (m.type==='betAmount'||m.type==='winAmount'?'$':'') + m.target + (m.type==='winCoef'?'×':'') + (m.type==='betCount'?' bets':'');
+    let condStr = '—';
+    if (m.qualifier==='minBetAmt')  condStr = `Min bet $${m.qualifierVal||1}`;
+    if (m.qualifier==='minWinCoef') condStr = `Min coef ${m.qualifierVal||2}×`;
+    const isLast = i===missions.length-1;
     h += `<tr>
       <td><span class="tag tag-blue">${i+1}</span></td>
       <td>${name}</td>
-      <td style="font-family:var(--mono)">${unit}${m.target.toLocaleString()}</td>
+      <td style="font-size:11px;color:var(--text3)">${condStr}</td>
+      <td style="font-family:var(--mono)">${targetStr}</td>
       <td>${i===0 ? fmtN(participating) : '<span style="color:var(--text3)">same cohort</span>'}</td>
-      <td>${i===missions.length-1 ? `<span class="tag tag-green">${fmtN(winners)}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
-      <td>${i===missions.length-1 ? `<span class="tag tag-orange">${fmt(winners*prizeVal)}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+      <td>${isLast ? `<span class="tag tag-green">${fmtN(winners)}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+      ${isRepeatable ? `
+        <td>${isLast ? `<span class="tag tag-blue">${effRepeats.toFixed(1)}×</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+        <td>${isLast ? `<span class="tag tag-gold">${fmtN(totalCompletions)}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
+      ` : ''}
+      <td>${isLast ? `<span class="tag tag-orange">${fmt(totalCompletions*prizeVal)}</span>` : '<span style="color:var(--text3)">—</span>'}</td>
     </tr>`;
   });
   h += '</tbody></table>';
@@ -971,15 +1381,22 @@ function drawDonut(incr,cost) {
     plugins:{legend:{position:'bottom',labels:{color:t.legendCol,font:{family:'IBM Plex Mono',size:11},boxWidth:12}},
       tooltip:{backgroundColor:t.ttBg,borderColor:t.ttBorder,borderWidth:1,titleColor:t.ttTitle,bodyColor:t.ttBody,padding:10}}});
 }
-function drawFunnel(total,part,winners) {
+function drawFunnel(total, part, winners, totalPayouts) {
   const o = baseOpts(v=>Math.round(v).toLocaleString());
+  const labels = ['Total Players','Participating','Unique Winners'];
+  const data   = [total, part, winners];
+  const bg     = ['rgba(96,165,250,.4)','rgba(74,222,128,.4)','rgba(251,191,36,.5)'];
+  const br     = ['#60a5fa','#4ade80','#fbbf24'];
+  if (totalPayouts !== null) {
+    labels.push('Total Payouts');
+    data.push(totalPayouts);
+    bg.push('rgba(251,146,60,.45)');
+    br.push('#fb923c');
+  }
   mk('chartFunnel','bar',{
-    labels:['Total Players','Participating','Prize Winners'],
-    datasets:[{data:[total,part,winners],
-      backgroundColor:['rgba(96,165,250,.4)','rgba(74,222,128,.4)','rgba(251,191,36,.5)'],
-      borderColor:['#60a5fa','#4ade80','#fbbf24'],
-      borderWidth:1.5,borderRadius:4}]
-  },{...o,plugins:{...o.plugins,legend:{display:false}}});
+    labels,
+    datasets:[{ data, backgroundColor:bg, borderColor:br, borderWidth:1.5, borderRadius:4 }]
+  },{...o, plugins:{...o.plugins, legend:{display:false}}});
 }
 
 // ════════════ TABS ════════════
