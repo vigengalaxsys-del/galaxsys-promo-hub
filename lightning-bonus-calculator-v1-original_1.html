@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lightning Bonus — Cashback Business Case Calculator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg: #0E1015;
+    --panel: #161922;
+    --panel-2: #1D2130;
+    --line: #2A2F3D;
+    --text: #ECEEF4;
+    --muted: #8B90A3;
+    --amber: #FFC93C;
+    --amber-dim: #6B5A22;
+    --cyan: #45D8C6;
+    --coral: #FF6B5E;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    --sans: 'Inter', system-ui, sans-serif;
+    --disp: 'Space Grotesk', var(--sans);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.45;
+    padding:0 0 60px 0;
+  }
+
+  a{color:var(--cyan);}
+
+  .topbar{
+    display:flex;align-items:center;gap:14px;
+    padding:22px 28px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, #12141C 0%, #0E1015 100%);
+    position:sticky; top:0; z-index:20;
+  }
+  .bolt-mark{
+    width:34px;height:34px;flex:0 0 34px;
+    filter:drop-shadow(0 0 6px rgba(255,201,60,.5));
+  }
+  .topbar h1{
+    font-family:var(--disp);
+    font-size:19px; font-weight:700; margin:0;
+    letter-spacing:.2px;
+  }
+  .topbar .sub{
+    color:var(--muted); font-size:12.5px; margin-top:2px;
+  }
+  .topbar-right{margin-left:auto; display:flex; gap:10px; align-items:center;}
+  .btn{
+    font-family:var(--sans); font-size:13px; font-weight:600;
+    border:1px solid var(--line); background:var(--panel-2); color:var(--text);
+    padding:8px 14px; border-radius:8px; cursor:pointer;
+  }
+  .btn:hover{border-color:#3A4058;}
+  .btn.primary{background:var(--amber); color:#1A1300; border-color:var(--amber);}
+  .btn.primary:hover{filter:brightness(1.05);}
+  .btn.ghost{background:transparent;}
+  .btn.small{padding:5px 10px; font-size:12px;}
+  .btn.danger{color:var(--coral); border-color:#4a2a28;}
+
+  .layout{
+    display:grid;
+    grid-template-columns: 400px 1fr;
+    gap:22px;
+    padding:22px 28px;
+    align-items:start;
+  }
+  @media (max-width: 980px){
+    .layout{grid-template-columns: 1fr;}
+  }
+
+  .rail{position:sticky; top:88px; display:flex; flex-direction:column; gap:16px;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:18px 18px 16px;
+  }
+  .card h2{
+    font-family:var(--disp); font-size:14px; font-weight:600;
+    margin:0 0 12px; letter-spacing:.3px; text-transform:uppercase; color:var(--muted);
+    display:flex; align-items:center; gap:8px;
+  }
+  .card h2 .n{color:var(--amber); font-family:var(--mono);}
+
+  .field{margin-bottom:12px;}
+  .field label{
+    display:block; font-size:12px; color:var(--muted); margin-bottom:5px;
+  }
+  .field .hint{font-size:11px; color:#5C6178; margin-top:4px;}
+  input[type=number], input[type=text]{
+    width:100%; background:#0F1219; border:1px solid var(--line); color:var(--text);
+    padding:8px 10px; border-radius:7px; font-family:var(--mono); font-size:13px;
+  }
+  input[type=number]:focus, input[type=text]:focus{outline:none; border-color:var(--amber);}
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;}
+
+  .box-list{display:flex; flex-direction:column; gap:6px; margin-bottom:8px;}
+  .box-item{display:flex; gap:6px; align-items:center;}
+  .box-item input{flex:1;}
+  .box-item .rm{
+    flex:0 0 26px; height:32px; border-radius:6px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--coral); cursor:pointer; font-size:14px;
+  }
+
+  .currency-block{
+    border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:12px;
+    background:#12141D;
+  }
+  .currency-block .cb-head{
+    display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;
+  }
+  .currency-block .cb-head input[type=text]{
+    font-family:var(--disp); font-weight:600; font-size:13.5px; background:transparent;
+    border:none; padding:0; width:auto; color:var(--amber);
+  }
+
+  .divider{height:1px; background:var(--line); margin:16px 0;}
+
+  /* ---------- OUTPUT ---------- */
+  .out-top{display:grid; grid-template-columns: 1.3fr 1fr; gap:16px; margin-bottom:16px;}
+  @media (max-width: 1300px){ .out-top{grid-template-columns:1fr;} }
+
+  .verdict{
+    background:radial-gradient(circle at 0% 0%, #1A1C2A 0%, var(--panel) 60%);
+    border:1px solid var(--line); border-radius:14px; padding:22px;
+  }
+  .verdict .label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.4px;}
+  .verdict .big{
+    font-family:var(--mono); font-size:34px; font-weight:600; color:var(--amber); margin:4px 0 2px;
+  }
+  .verdict .metrics{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;}
+  .verdict .metric b{
+    display:block; font-family:var(--mono); font-size:18px; color:var(--text); font-weight:600;
+  }
+  .verdict .metric span{font-size:11.5px; color:var(--muted);}
+  .verdict .warn{
+    margin-top:14px; padding:10px 12px; border-radius:8px; font-size:12.5px;
+    background:#2A2013; border:1px solid #4A3A1A; color:#FFD98A;
+  }
+
+  .gauge-card{
+    border:1px solid var(--line); border-radius:14px; padding:18px;
+    background:var(--panel); display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:8px;
+  }
+  .gauge-card .cap{font-size:12px; color:var(--muted); text-align:center;}
+  .gauge-card .cap b{color:var(--text);}
+
+  table{width:100%; border-collapse:collapse; font-size:12.5px;}
+  th{
+    text-align:left; font-family:var(--sans); font-weight:600; color:var(--muted);
+    font-size:11px; text-transform:uppercase; letter-spacing:.3px;
+    padding:8px 10px; border-bottom:1px solid var(--line);
+  }
+  td{
+    padding:9px 10px; border-bottom:1px solid #1E2230; font-family:var(--mono); color:var(--text);
+  }
+  tr:last-child td{border-bottom:none;}
+  td.flag-bad{color:var(--coral);}
+  td.flag-ok{color:var(--cyan);}
+  .table-wrap{overflow-x:auto;}
+
+  .notes{
+    font-size:12.5px; color:var(--muted); line-height:1.6;
+  }
+  .notes b{color:var(--text);}
+  .notes code{background:#0F1219; padding:1px 5px; border-radius:4px; font-family:var(--mono); color:var(--cyan);}
+  .notes ul{margin:6px 0; padding-left:18px;}
+
+  .cycle-table-scroll{max-height:260px; overflow-y:auto;}
+
+  .foot-note{color:#4E5368; font-size:11px; text-align:center; margin-top:26px;}
+</style>
+</head>
+<body>
+<a href="index.html" style="
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  color: #6b7280;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: color 0.2s, box-shadow 0.2s;
+" onmouseover="this.style.color='#111827';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'"
+   onmouseout="this.style.color='#6b7280';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
+  &#8592; Hub
+</a>
+
+<div class="topbar">
+  <svg class="bolt-mark" viewBox="0 0 24 24" fill="none">
+    <path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z" fill="#FFC93C"/>
+  </svg>
+  <div>
+    <h1>Lightning Bonus — Cashback Business Case Calculator</h1>
+    <div class="sub">Model the odds pool, bonus bank and reveal-box payout economics before you ship the promo.</div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn ghost small" id="resetBtn">Reset to defaults</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ============ INPUT RAIL ============ -->
+  <div class="rail">
+
+    <div class="card">
+      <h2><span class="n">01</span> Promo mechanics</h2>
+      <div class="field">
+        <label>Reporting / base currency label</label>
+        <input type="text" id="baseCurrency" value="USD" />
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Bonus Bank % of each real-money bet</label>
+          <input type="number" id="bankPct" value="10" step="0.5" min="0" />
+        </div>
+        <div class="field">
+          <label>Odds Pool limit (points)</label>
+          <input type="number" id="poolLimit" value="50" step="1" min="1" />
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Odds Pool validity (hours)</label>
+          <input type="number" id="validityHours" value="24" step="1" min="1" />
+        </div>
+        <div class="field">
+          <label>Game RTP % <span style="color:#5C6178">(optional, for GGR)</span></label>
+          <input type="number" id="rtp" value="96" step="0.1" min="0" max="100" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Simulation period (days)</label>
+        <input type="number" id="simDays" value="30" step="1" min="1" />
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">02</span> Reveal boxes <span style="font-weight:400; text-transform:none; letter-spacing:0;">(% of accumulated Bonus Bank)</span></h2>
+      <div class="box-list" id="boxList"></div>
+      <button class="btn small" id="addBoxBtn">+ Add box</button>
+      <div class="hint">Each box is a percentage of that round's Bonus Bank. Player picks one box uniformly at random and wins that percentage of the bank. The remaining percentage rolls into the next cashback round.</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">03</span> Currencies &amp; traffic</h2>
+      <div id="currencyList"></div>
+      <button class="btn small" id="addCurrencyBtn">+ Add currency</button>
+      <div class="hint">Each currency keeps its own Odds Pool (same point limit). The Bonus Bank is aggregated per player across currencies, in <span id="fxNoteLabel">USD</span> terms.</div>
+    </div>
+
+  </div>
+
+  <!-- ============ OUTPUT ============ -->
+  <div class="out">
+
+    <div class="out-top">
+      <div class="verdict" id="verdictCard"></div>
+      <div class="gauge-card" id="gaugeCard"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h2><span class="n">04</span> Per-currency breakdown</h2>
+      <div class="table-wrap">
+        <table id="breakdownTable"></table>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <h2><span class="n">05</span> Cashback round-by-round (reference currency)</h2>
+      <div class="cycle-table-scroll table-wrap">
+        <table id="cycleTable"></table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="n">06</span> How this is calculated</h2>
+      <div class="notes" id="notesBox"></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="foot-note">Deterministic expected-value model — real traffic has variance. Treat outputs as a planning estimate, not a guarantee.</div>
+
+<script>
+/* ---------------------------------------------------------
+   STATE
+--------------------------------------------------------- */
+let state = {
+  baseCurrency: "USD",
+  bankPct: 10,
+  poolLimit: 50,
+  validityHours: 24,
+  rtp: 96,
+  simDays: 30,
+  boxes: [5, 10, 20, 30, 100],
+  currencies: [
+    { id: 1, name: "USD", fx: 1, players: 1000, betAvg: 10, betsPerDay: 40, hitRate: 30, avgWinRatio: 2 }
+  ]
+};
+let nextCurId = 2;
+
+/* ---------------------------------------------------------
+   RENDER: INPUT FORMS
+--------------------------------------------------------- */
+function renderBoxList(){
+  const wrap = document.getElementById('boxList');
+  wrap.innerHTML = '';
+  state.boxes.forEach((val, i) => {
+    const row = document.createElement('div');
+    row.className = 'box-item';
+    row.innerHTML = `
+      <input type="number" step="0.5" min="0" max="100" value="${val}" data-idx="${i}" class="boxVal" />
+      <span style="color:var(--muted); font-size:12px; flex:0 0 14px;">%</span>
+      <button class="rm" data-idx="${i}" title="Remove box">×</button>
+    `;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('.boxVal').forEach(el => {
+    el.addEventListener('input', e => {
+      state.boxes[+e.target.dataset.idx] = parseFloat(e.target.value) || 0;
+      recalc();
+    });
+  });
+  wrap.querySelectorAll('.rm').forEach(el => {
+    el.addEventListener('click', e => {
+      if (state.boxes.length <= 1) return;
+      state.boxes.splice(+e.target.dataset.idx, 1);
+      renderBoxList();
+      recalc();
+    });
+  });
+}
+
+function renderCurrencyList(){
+  const wrap = document.getElementById('currencyList');
+  wrap.innerHTML = '';
+  state.currencies.forEach(cur => {
+    const block = document.createElement('div');
+    block.className = 'currency-block';
+    block.innerHTML = `
+      <div class="cb-head">
+        <input type="text" value="${cur.name}" data-id="${cur.id}" data-f="name" class="curField" />
+        ${state.currencies.length > 1 ? `<button class="btn small danger rmCur" data-id="${cur.id}">Remove</button>` : ''}
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Active players</label>
+          <input type="number" class="curField" data-id="${cur.id}" data-f="players" value="${cur.players}" min="0" />
+        </div>
+        <div class="field">
+          <label>Exchange rate (1 ${state.baseCurrency} = ___ ${cur.name})</label>
+          <input type="number" class="curField" data-id="${cur.id}" data-f="fx" value="${cur.fx}" step="0.0001" min="0.0001" />
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Avg bet size (${cur.name})</label>
+          <input type="number" class="curField" data-id="${cur.id}" data-f="betAvg" value="${cur.betAvg}" step="0.1" min="0" />
+        </div>
+        <div class="field">
+          <label>Bets / player / day</label>
+          <input type="number" class="curField" data-id="${cur.id}" data-f="betsPerDay" value="${cur.betsPerDay}" step="1" min="0" />
+        </div>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>Hit rate % (win probability per bet)</label>
+          <input type="number" class="curField" data-id="${cur.id}" data-f="hitRate" value="${cur.hitRate}" step="0.5" min="0" max="100" />
+        </div>
+        <div class="field">
+          <label>Avg win/bet ratio on a hit</label>
+          <input type="number" class="curField" data-id="${cur.id}" data-f="avgWinRatio" value="${cur.avgWinRatio}" step="0.1" min="0" />
+        </div>
+      </div>
+    `;
+    wrap.appendChild(block);
+  });
+
+  wrap.querySelectorAll('.curField').forEach(el => {
+    el.addEventListener('input', e => {
+      const id = +e.target.dataset.id;
+      const f = e.target.dataset.f;
+      const cur = state.currencies.find(c => c.id === id);
+      if (!cur) return;
+      cur[f] = (f === 'name') ? e.target.value : (parseFloat(e.target.value) || 0);
+      if (f === 'name') renderCurrencyList(); // refresh fx label
+      recalc();
+    });
+  });
+  wrap.querySelectorAll('.rmCur').forEach(el => {
+    el.addEventListener('click', e => {
+      const id = +e.target.dataset.id;
+      state.currencies = state.currencies.filter(c => c.id !== id);
+      renderCurrencyList();
+      recalc();
+    });
+  });
+}
+
+/* ---------------------------------------------------------
+   CALCULATION ENGINE
+--------------------------------------------------------- */
+function avg(arr){ return arr.reduce((a,b)=>a+b,0) / arr.length; }
+function fmt(n, dp=2){
+  if (!isFinite(n)) return '—';
+  return n.toLocaleString(undefined, {minimumFractionDigits:dp, maximumFractionDigits:dp});
+}
+function fmtPct(n, dp=2){
+  if (!isFinite(n)) return '—';
+  return (n*100).toFixed(dp) + '%';
+}
+
+function calcCurrency(cur){
+  const hitFrac = cur.hitRate/100;
+  const pointsPerBet = hitFrac * cur.avgWinRatio;
+  const bankPctFrac = state.bankPct/100;
+  const avgBoxPct = avg(state.boxes)/100; // average % of bank won when a box is picked
+
+  const result = { cur, pointsPerBet, avgBoxPct };
+
+  if (pointsPerBet <= 0 || cur.betsPerDay <= 0){
+    return Object.assign(result, { valid:false });
+  }
+
+  const betsToFillPool = state.poolLimit / pointsPerBet;
+  const hoursToFill = (betsToFillPool / cur.betsPerDay) * 24;
+  const expiresBeforeFill = hoursToFill > state.validityHours;
+
+  const bankPerCycleLocal = betsToFillPool * cur.betAvg * bankPctFrac;
+
+  const totalBetsPeriod = cur.betsPerDay * state.simDays;
+  const cyclesFull = Math.floor(totalBetsPeriod / betsToFillPool);
+
+  let bankCarry = 0, totalPayoutLocal = 0;
+  const cycles = [];
+  for (let c=1; c<=cyclesFull; c++){
+    const bankThisCycle = bankPerCycleLocal + bankCarry;
+    const payout = bankThisCycle * avgBoxPct; // player wins that % of the round's bank
+    const rollover = bankThisCycle - payout;
+    totalPayoutLocal += payout;
+    cycles.push({ cycle:c, bankThisCycle, payout, rollover });
+    bankCarry = rollover;
+  }
+
+  const totalTurnoverLocal = totalBetsPeriod * cur.betAvg;
+  const totalCostLocalAllPlayers = totalPayoutLocal * cur.players;
+  const totalTurnoverLocalAllPlayers = totalTurnoverLocal * cur.players;
+  const totalBankFundedLocalAllPlayers = totalTurnoverLocalAllPlayers * bankPctFrac;
+  const totalTriggersAllPlayers = cyclesFull * cur.players;
+
+  // convert to base: base = local / fx
+  const totalCostBase = totalCostLocalAllPlayers / cur.fx;
+  const totalTurnoverBase = totalTurnoverLocalAllPlayers / cur.fx;
+  const totalBankFundedBase = totalBankFundedLocalAllPlayers / cur.fx;
+
+  return Object.assign(result, {
+    valid: true,
+    betsToFillPool, hoursToFill, expiresBeforeFill,
+    bankPerCycleLocal, cyclesFull, cycles,
+    totalPayoutLocal, totalCostLocalAllPlayers,
+    totalTurnoverLocal, totalTurnoverLocalAllPlayers,
+    totalBankFundedLocalAllPlayers, totalTriggersAllPlayers,
+    totalCostBase, totalTurnoverBase, totalBankFundedBase
+  });
+}
+
+/* ---------------------------------------------------------
+   RENDER: OUTPUTS
+--------------------------------------------------------- */
+function recalc(){
+  document.getElementById('fxNoteLabel').textContent = state.baseCurrency;
+
+  const results = state.currencies.map(calcCurrency);
+  const anyExpiry = results.some(r => r.valid && r.expiresBeforeFill);
+
+  const totalCostBase = results.reduce((a,r)=> a + (r.valid ? r.totalCostBase : 0), 0);
+  const totalTurnoverBase = results.reduce((a,r)=> a + (r.valid ? r.totalTurnoverBase : 0), 0);
+  const totalBankFundedBase = results.reduce((a,r)=> a + (r.valid ? r.totalBankFundedBase : 0), 0);
+  const totalTriggers = results.reduce((a,r)=> a + (r.valid ? r.totalTriggersAllPlayers : 0), 0);
+  const ggrBase = totalTurnoverBase * (1 - state.rtp/100);
+  const costPctTurnover = totalTurnoverBase > 0 ? totalCostBase/totalTurnoverBase : NaN;
+  const costPctGGR = ggrBase > 0 ? totalCostBase/ggrBase : NaN;
+
+  // ---- Verdict card ----
+  const verdict = document.getElementById('verdictCard');
+  verdict.innerHTML = `
+    <div class="label">Total promo cost over ${state.simDays} days</div>
+    <div class="big">${fmt(totalCostBase,0)} ${state.baseCurrency}</div>
+    <div style="color:var(--muted); font-size:12.5px;">across ${state.currencies.length} currenc${state.currencies.length===1?'y':'ies'} · ${fmt(totalTriggers,0)} bonus reveals</div>
+    <div class="metrics">
+      <div class="metric"><b>${fmtPct(costPctTurnover)}</b><span>Cost as % of turnover (handle)</span></div>
+      <div class="metric"><b>${isFinite(costPctGGR) ? fmtPct(costPctGGR) : '—'}</b><span>Cost as % of GGR (RTP ${state.rtp}%)</span></div>
+      <div class="metric"><b>${fmt(totalBankFundedBase,0)} ${state.baseCurrency}</b><span>Total Bonus Bank funded</span></div>
+      <div class="metric"><b>${fmt(totalTurnoverBase,0)} ${state.baseCurrency}</b><span>Total turnover simulated</span></div>
+    </div>
+    ${anyExpiry ? `<div class="warn">⚠ At least one currency's average time-to-fill the Odds Pool exceeds its ${state.validityHours}h validity window. In practice many players will never fill it in time — treat trigger counts for that currency as an upper bound.</div>` : ''}
+  `;
+
+  // ---- Gauge card (reference = first currency) ----
+  const ref = results[0];
+  const gaugeCard = document.getElementById('gaugeCard');
+  if (ref && ref.valid){
+    gaugeCard.innerHTML = `
+      ${gaugeSVG(true)}
+      <div class="cap"><b>${fmt(ref.betsToFillPool,1)}</b> bets to fill the Odds Pool<br/>≈ <b>${fmt(ref.hoursToFill,1)}h</b> at current pace (${ref.cur.name})</div>
+    `;
+  } else {
+    gaugeCard.innerHTML = `${gaugeSVG(false)}<div class="cap">Add hit rate / win ratio to see the pool fill.</div>`;
+  }
+
+  // ---- Breakdown table ----
+  const bt = document.getElementById('breakdownTable');
+  bt.innerHTML = `
+    <tr>
+      <th>Currency</th><th>Pts / bet</th><th>Bets to fill</th><th>Time to fill</th>
+      <th>Cycles / period</th><th>Avg payout / cycle</th><th>Total cost (local)</th><th>Total cost (${state.baseCurrency})</th>
+    </tr>
+    ${results.map(r => r.valid ? `
+      <tr>
+        <td>${r.cur.name}</td>
+        <td>${fmt(r.pointsPerBet,3)}</td>
+        <td>${fmt(r.betsToFillPool,1)}</td>
+        <td class="${r.expiresBeforeFill ? 'flag-bad':'flag-ok'}">${fmt(r.hoursToFill,1)}h ${r.expiresBeforeFill ? '⚠':''}</td>
+        <td>${fmt(r.cyclesFull,0)}</td>
+        <td>${fmt(r.cycles.length ? avg(r.cycles.map(c=>c.payout)) : 0,2)} ${r.cur.name}</td>
+        <td>${fmt(r.totalCostLocalAllPlayers,0)} ${r.cur.name}</td>
+        <td>${fmt(r.totalCostBase,0)} ${state.baseCurrency}</td>
+      </tr>
+    ` : `
+      <tr><td>${r.cur.name}</td><td colspan="7" style="color:var(--coral)">Set hit rate, win ratio and bets/day &gt; 0</td></tr>
+    `).join('')}
+  `;
+
+  // ---- Cycle table (reference currency) ----
+  const ct = document.getElementById('cycleTable');
+  if (ref && ref.valid && ref.cycles.length){
+    ct.innerHTML = `
+      <tr><th>Round</th><th>Bank available</th><th>Payout</th><th>Rolled to next round</th></tr>
+      ${ref.cycles.map(c => `
+        <tr>
+          <td>#${c.cycle}</td>
+          <td>${fmt(c.bankThisCycle,2)} ${ref.cur.name}</td>
+          <td>${fmt(c.payout,2)} ${ref.cur.name}</td>
+          <td>${fmt(c.rollover,2)} ${ref.cur.name}</td>
+        </tr>
+      `).join('')}
+    `;
+  } else {
+    ct.innerHTML = `<tr><td style="color:var(--muted)">No completed cashback rounds in this period yet — the pool doesn't fill fast enough. Increase bets/day, hit rate or win ratio, or extend the simulation period.</td></tr>`;
+  }
+
+  // ---- Notes ----
+  document.getElementById('notesBox').innerHTML = `
+    <ul>
+      <li><b>Points per bet</b> = hit rate × average win/bet ratio on a hit. Only real-money wins add points — Free Bet / Free Amount wagers are excluded, matching the promo rules.</li>
+      <li><b>Bets to fill the Odds Pool</b> = pool limit ÷ points per bet.</li>
+      <li><b>Bonus Bank per cashback round</b> = (bets to fill pool) × average bet × bank %. It accrues from every real-money bet in that round, win or lose.</li>
+      <li><b>Reveal boxes are now percentages</b> of that round's Bonus Bank, not fixed amounts. Payout = bank available × the picked box's %. The unpaid remainder rolls into the next cashback round, per rule 7.</li>
+      <li><b>24h expiry</b> is compared against the expected time-to-fill; if that exceeds the validity window, the model flags it — real trigger counts for that currency will be lower than the expected-value estimate because slower players' pools reset to zero.</li>
+      <li><b>Multi-currency</b>: each currency keeps an independent Odds Pool (rule 9), while the Bonus Bank and all cost totals are aggregated per player in <code>${state.baseCurrency}</code> using the exchange rates you enter (rule 10). Because boxes are now percentages, the same box list applies identically to every currency — no conversion needed.</li>
+      <li>This is a deterministic expected-value model intended for sizing the business case — it does not simulate individual player variance, session-level volatility, or box-choice psychology.</li>
+    </ul>
+  `;
+}
+
+function gaugeSVG(full){
+  const glow = full ? 'filter:drop-shadow(0 0 10px rgba(255,201,60,.65));' : 'opacity:.35;';
+  const color = full ? '#FFC93C' : '#5C6178';
+  return `
+  <svg width="120" height="120" viewBox="0 0 120 120">
+    <circle cx="60" cy="60" r="52" fill="none" stroke="#2A2F3D" stroke-width="8"/>
+    <circle cx="60" cy="60" r="52" fill="none" stroke="${color}" stroke-width="8"
+      stroke-dasharray="326.7" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 60 60)"/>
+    <g style="${glow}">
+      <path d="M65 26L44 66h16l-6 32 33-44H71l6-28z" fill="${color}"/>
+    </g>
+  </svg>`;
+}
+
+/* ---------------------------------------------------------
+   TOP-LEVEL FIELD BINDINGS
+--------------------------------------------------------- */
+function bindTopFields(){
+  const map = {
+    baseCurrency: v => state.baseCurrency = v,
+    bankPct: v => state.bankPct = parseFloat(v)||0,
+    poolLimit: v => state.poolLimit = parseFloat(v)||0,
+    validityHours: v => state.validityHours = parseFloat(v)||0,
+    rtp: v => state.rtp = parseFloat(v)||0,
+    simDays: v => state.simDays = parseFloat(v)||0,
+  };
+  Object.keys(map).forEach(id => {
+    document.getElementById(id).addEventListener('input', e => {
+      map[id](e.target.value);
+      if (id === 'baseCurrency') renderCurrencyList();
+      recalc();
+    });
+  });
+}
+
+document.getElementById('addBoxBtn').addEventListener('click', () => {
+  state.boxes.push(10);
+  renderBoxList();
+  recalc();
+});
+
+document.getElementById('addCurrencyBtn').addEventListener('click', () => {
+  state.currencies.push({ id: nextCurId++, name: 'EUR', fx: 0.92, players: 500, betAvg: 10, betsPerDay: 40, hitRate: 30, avgWinRatio: 2 });
+  renderCurrencyList();
+  recalc();
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  state = {
+    baseCurrency: "USD", bankPct: 10, poolLimit: 50, validityHours: 24, rtp: 96, simDays: 30,
+    boxes: [5, 10, 20, 30, 100],
+    currencies: [{ id: 1, name: "USD", fx: 1, players: 1000, betAvg: 10, betsPerDay: 40, hitRate: 30, avgWinRatio: 2 }]
+  };
+  nextCurId = 2;
+  document.getElementById('baseCurrency').value = state.baseCurrency;
+  document.getElementById('bankPct').value = state.bankPct;
+  document.getElementById('poolLimit').value = state.poolLimit;
+  document.getElementById('validityHours').value = state.validityHours;
+  document.getElementById('rtp').value = state.rtp;
+  document.getElementById('simDays').value = state.simDays;
+  renderBoxList(); renderCurrencyList(); recalc();
+});
+
+/* ---------------------------------------------------------
+   INIT
+--------------------------------------------------------- */
+bindTopFields();
+renderBoxList();
+renderCurrencyList();
+recalc();
+</script>
+</body>
+</html>
