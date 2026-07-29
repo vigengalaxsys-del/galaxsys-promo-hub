@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>⚡ Lightning Bonus Calculator — Galaxsys</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #090D1A; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #090D1A; }
+    ::-webkit-scrollbar-thumb { background: #222A45; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2E3A5C; }
+  </style>
+</head>
+<body>
+<a href="index.html" style="
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  color: #6b7280;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: color 0.2s, box-shadow 0.2s;
+" onmouseover="this.style.color='#111827';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'"
+   onmouseout="this.style.color='#6b7280';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
+  &#8592; Hub
+</a>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+
+    // ─── THEME ────────────────────────────────────────────────────────────────
+    const T = {
+      bg:      "#090D1A",
+      surface: "#111527",
+      card:    "#161C30",
+      border:  "#222A45",
+      gold:    "#F5C518",
+      goldBg:  "rgba(245,197,24,0.10)",
+      purple:  "#8B5CF6",
+      teal:    "#14B8A6",
+      orange:  "#F97316",
+      text:    "#DDE4F5",
+      soft:    "#7A84A8",
+      muted:   "#404970",
+      green:   "#22C55E",
+      red:     "#EF4444",
+    };
+
+    // ─── FORMATTERS ──────────────────────────────────────────────────────────
+    const $f = (n, compact = false) => {
+      const abs = Math.abs(n), sign = n < 0 ? "-" : "";
+      if (compact) {
+        if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(2)}M`;
+        if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(1)}K`;
+        return `${sign}$${abs.toFixed(0)}`;
+      }
+      if (abs >= 1e6) return `${sign}$${(abs/1e6).toFixed(3)}M`;
+      if (abs >= 1e3) return `${sign}$${(abs/1e3).toFixed(2)}K`;
+      return `${sign}$${abs.toFixed(2)}`;
+    };
+    const nf = (n) => {
+      const abs = Math.abs(n);
+      if (abs >= 1e6) return `${(n/1e6).toFixed(2)}M`;
+      if (abs >= 1e3) return `${(n/1e3).toFixed(1)}K`;
+      return n.toFixed(1);
+    };
+    const pf = (n, d = 2) => `${n.toFixed(d)}%`;
+
+    // ─── DEFAULTS ────────────────────────────────────────────────────────────
+    const BOX_DEFAULTS = {
+      4: [40, 30, 20, 10],
+      6: [30, 25, 20, 15, 7, 3],
+      8: [10, 35, 7, 5, 20, 15, 7, 1],
+    };
+    const BOX_COLORS = [
+      "#F5C518","#8B5CF6","#14B8A6","#F97316",
+      "#60A5FA","#F472B6","#A3E635","#FB923C",
+    ];
+
+    // ─── MICRO-COMPONENTS ────────────────────────────────────────────────────
+    const Label = ({ children, hint }) => (
+      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+        <span style={{ color:T.soft, fontSize:12, fontWeight:600, letterSpacing:"0.03em" }}>{children}</span>
+        {hint && <span style={{ color:T.muted, fontSize:11 }}>{hint}</span>}
+      </div>
+    );
+
+    const NumInput = ({ label, hint, value, onChange, min, max, step, suffix }) => (
+      <div style={{ marginBottom:13 }}>
+        <Label hint={hint}>{label}</Label>
+        <div style={{
+          display:"flex", alignItems:"center",
+          background:T.bg, border:`1px solid ${T.border}`, borderRadius:7, overflow:"hidden",
+        }}>
+          <input
+            type="number" value={value}
+            onChange={e => onChange(parseFloat(e.target.value) || 0)}
+            min={min} max={max} step={step ?? 1}
+            style={{
+              background:"transparent", border:"none", outline:"none",
+              color:T.text, fontSize:14, fontWeight:700,
+              padding:"8px 12px", width:"100%", fontFamily:"inherit",
+            }}
+          />
+          {suffix && <span style={{ color:T.muted, fontSize:13, paddingRight:10, whiteSpace:"nowrap" }}>{suffix}</span>}
+        </div>
+      </div>
+    );
+
+    const SectionHead = ({ icon, title }) => (
+      <div style={{ display:"flex", alignItems:"center", gap:8, margin:"22px 0 14px" }}>
+        <span style={{ fontSize:15 }}>{icon}</span>
+        <span style={{ color:T.text, fontWeight:800, fontSize:12, textTransform:"uppercase", letterSpacing:"0.10em" }}>{title}</span>
+        <div style={{ flex:1, height:1, background:T.border }} />
+      </div>
+    );
+
+    const KpiCard = ({ label, value, sub, accent }) => (
+      <div style={{
+        background:T.card, border:`1px solid ${T.border}`, borderRadius:10,
+        padding:"14px 16px", flex:"1 1 130px", minWidth:0,
+      }}>
+        <div style={{ color:T.soft, fontSize:11, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{label}</div>
+        <div style={{ color: accent ?? T.text, fontSize:20, fontWeight:800, lineHeight:1.1 }}>{value}</div>
+        {sub && <div style={{ color:T.muted, fontSize:11, marginTop:5, lineHeight:1.4 }}>{sub}</div>}
+      </div>
+    );
+
+    const InsightCard = ({ icon, title, body, accent }) => (
+      <div style={{
+        background:T.card, border:`1px solid ${T.border}`,
+        borderLeft:`3px solid ${accent}`, borderRadius:10,
+        padding:"14px 16px", flex:"1 1 260px",
+      }}>
+        <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:8 }}>
+          <span style={{ fontSize:18 }}>{icon}</span>
+          <span style={{ fontWeight:700, color:accent, fontSize:13 }}>{title}</span>
+        </div>
+        <p style={{ margin:0, color:T.soft, fontSize:12, lineHeight:1.65 }}>{body}</p>
+      </div>
+    );
+
+    // ─── MAIN CALCULATOR ─────────────────────────────────────────────────────
+    function LightningBonusCalculator() {
+
+      // Base game
+      const [players,       setPlayers]       = useState(500);
+      const [avgBet,        setAvgBet]        = useState(2.5);
+      const [betsPerPlayer, setBetsPerPlayer] = useState(100);
+      const [winRate,       setWinRate]       = useState(40);
+      const [avgWinMult,    setAvgWinMult]    = useState(2.5);
+      const [baseRTP,       setBaseRTP]       = useState(96);
+
+      // Lightning config
+      const [betAmtPct,    setBetAmtPct]    = useState(1);
+      const [coeffLimit,   setCoeffLimit]   = useState(100);
+      const [numBoxes,     setNumBoxes]     = useState(8);
+      const [boxPcts,      setBoxPcts]      = useState(BOX_DEFAULTS[8]);
+      const [expiryHrs,    setExpiryHrs]    = useState(24);
+      const [mode,         setMode]         = useState("standard");
+
+      // Promo assumptions
+      const [playerUp,     setPlayerUp]     = useState(10);
+      const [betCntUp,     setBetCntUp]     = useState(15);
+      const [betAmtUp,     setBetAmtUp]     = useState(5);
+      const [forecastDays, setForecastDays] = useState(30);
+
+      const boxSum = boxPcts.reduce((a, b) => a + b, 0);
+
+      const handleNumBoxes = (n) => { setNumBoxes(n); setBoxPcts(BOX_DEFAULTS[n]); };
+      const handleBoxPct   = (i, v) => {
+        const nb = [...boxPcts]; nb[i] = parseFloat(v) || 0; setBoxPcts(nb);
+      };
+
+      // ── CALCULATIONS ───────────────────────────────────────────────────────
+      const R = useMemo(() => {
+        const avgCoeffPerBet = (winRate / 100) * avgWinMult;
+        const betsPerCycle   = avgCoeffPerBet > 0 ? coeffLimit / avgCoeffPerBet : 1e9;
+        const bankPerCycle   = betsPerCycle * avgBet * (betAmtPct / 100);
+
+        const cyclesPerPlayerDay       = betsPerPlayer  / betsPerCycle;
+        const minBox = Math.min(...boxPcts);
+        const maxBox = Math.max(...boxPcts);
+        const meanBox = boxSum / numBoxes;
+
+        const stdPayoutPerTrigger  = bankPerCycle * (meanBox / 100);
+        const stdBankExpiredPct    = 100 - meanBox;
+        const progSteadyBank       = bankPerCycle * numBoxes;
+        const progPayoutPerTrigger = bankPerCycle;
+
+        const playersA       = players      * (1 + playerUp / 100);
+        const betsPerPlayerA = betsPerPlayer * (1 + betCntUp / 100);
+        const avgBetA        = avgBet        * (1 + betAmtUp / 100);
+
+        const cyclesPerPlayerForecastA = (betsPerPlayerA / betsPerCycle) * forecastDays;
+
+        const totBetsBefore = players  * betsPerPlayer  * forecastDays;
+        const totAmtBefore  = totBetsBefore * avgBet;
+        const ggrBefore     = totAmtBefore  * (1 - baseRTP / 100);
+
+        const totBetsAfter  = playersA * betsPerPlayerA * forecastDays;
+        const totAmtAfter   = totBetsAfter  * avgBetA;
+        const bonusBank     = totAmtAfter   * (betAmtPct / 100);
+
+        const bonusPaidStd  = bonusBank * (meanBox / 100);
+        const bonusPaidProg = bonusBank;
+        const bonusPaid     = mode === "standard" ? bonusPaidStd : bonusPaidProg;
+
+        const ggrAfterBase  = totAmtAfter * (1 - baseRTP / 100);
+        const ggrAfterStd   = ggrAfterBase - bonusPaidStd;
+        const ggrAfterProg  = ggrAfterBase - bonusPaidProg;
+        const ggrAfter      = mode === "standard" ? ggrAfterStd : ggrAfterProg;
+        const ggrDelta      = ggrAfter - ggrBefore;
+        const ggrDeltaPct   = ggrBefore > 0 ? (ggrDelta / ggrBefore) * 100 : 0;
+
+        const volumeGrowthPct = totAmtBefore > 0 ? ((totAmtAfter - totAmtBefore) / totAmtBefore) * 100 : 0;
+
+        const costPctStd  = betAmtPct * (meanBox / 100);
+        const costPctProg = betAmtPct;
+        const effHouseBase  = (1 - baseRTP / 100) * 100;
+        const effHouseStd   = effHouseBase - costPctStd;
+        const effHouseProg  = effHouseBase - costPctProg;
+        const effHouseAfter = mode === "standard" ? effHouseStd : effHouseProg;
+
+        const dailyBonusTriggers = cyclesPerPlayerForecastA * playersA / forecastDays;
+
+        return {
+          avgCoeffPerBet, betsPerCycle, bankPerCycle,
+          cyclesPerPlayerDay, cyclesPerPlayerForecastA,
+          minBox, maxBox, meanBox,
+          stdPayoutPerTrigger, stdBankExpiredPct,
+          progSteadyBank, progPayoutPerTrigger,
+          playersA, betsPerPlayerA, avgBetA,
+          totBetsBefore, totAmtBefore, ggrBefore,
+          totBetsAfter, totAmtAfter, bonusBank,
+          bonusPaidStd, bonusPaidProg, bonusPaid,
+          ggrAfterBase, ggrAfterStd, ggrAfterProg, ggrAfter,
+          ggrDelta, ggrDeltaPct, volumeGrowthPct,
+          costPctStd, costPctProg,
+          effHouseBase, effHouseStd, effHouseProg, effHouseAfter,
+          dailyBonusTriggers,
+        };
+      }, [
+        players, avgBet, betsPerPlayer, winRate, avgWinMult, baseRTP,
+        betAmtPct, coeffLimit, numBoxes, boxPcts, mode,
+        playerUp, betCntUp, betAmtUp, forecastDays, boxSum,
+      ]);
+
+      const payoutPerTrigger = mode === "standard" ? R.stdPayoutPerTrigger : R.progPayoutPerTrigger;
+
+      // ── RENDER ─────────────────────────────────────────────────────────────
+      return (
+        <div style={{ fontFamily:"'Inter',system-ui,sans-serif", background:T.bg, color:T.text, height:"100vh", display:"flex", flexDirection:"column" }}>
+
+          {/* HEADER */}
+          <div style={{
+            background:"linear-gradient(135deg,#090D1A 0%,#111527 60%,#160D2E 100%)",
+            borderBottom:`1px solid ${T.border}`,
+            padding:"13px 24px", flexShrink:0,
+            display:"flex", alignItems:"center", justifyContent:"space-between",
+          }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{
+                width:38, height:38, borderRadius:10, flexShrink:0,
+                background:"linear-gradient(135deg,#F5C518,#F97316)",
+                display:"flex", alignItems:"center", justifyContent:"center", fontSize:20,
+              }}>⚡</div>
+              <div>
+                <div style={{ fontSize:18, fontWeight:900, color:T.gold, letterSpacing:"-0.02em" }}>
+                  Lightning Bonus Calculator
+                </div>
+                <div style={{ fontSize:10, color:T.muted, letterSpacing:"0.12em", marginTop:1 }}>
+                  PROMO TOOL · BUSINESS IMPACT FORECASTER
+                </div>
+              </div>
+            </div>
+            <div style={{
+              background:T.goldBg, border:`1px solid rgba(245,197,24,0.25)`,
+              borderRadius:6, padding:"4px 14px",
+              color:T.gold, fontSize:11, fontWeight:800, letterSpacing:"0.12em",
+            }}>GALAXSYS</div>
+          </div>
+
+          {/* TWO-COLUMN BODY */}
+          <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
+
+            {/* ══ LEFT PANEL: INPUTS ══ */}
+            <div style={{
+              width:310, minWidth:310, flexShrink:0,
+              borderRight:`1px solid ${T.border}`,
+              background:T.surface,
+              overflowY:"auto", padding:"4px 18px 30px",
+            }}>
+
+              <SectionHead icon="📊" title="Base Game Performance" />
+              <NumInput label="Daily Active Players"      value={players}        onChange={setPlayers}        min={1}    step={50}                          />
+              <NumInput label="Avg Bet Amount"            value={avgBet}         onChange={setAvgBet}         min={0.01} step={0.5}  suffix="$"  hint="per bet"           />
+              <NumInput label="Avg Bets / Player / Day"   value={betsPerPlayer}  onChange={setBetsPerPlayer}  min={1}    step={10}               hint="daily activity"    />
+              <NumInput label="Win Rate"                  value={winRate}        onChange={setWinRate}        min={1}    max={99}   step={1}    suffix="%" hint="of bets win"    />
+              <NumInput label="Avg Win Multiplier"        value={avgWinMult}     onChange={setAvgWinMult}     min={1}    step={0.5}  suffix="×"  hint="on winning bets"  />
+              <NumInput label="Base Game RTP"             value={baseRTP}        onChange={setBaseRTP}        min={50}   max={99.9} step={0.1}  suffix="%"               />
+
+              <SectionHead icon="⚡" title="Lightning Bonus Config" />
+              <NumInput label="Bet Amount Percent"        value={betAmtPct}      onChange={setBetAmtPct}      min={0.1}  max={10}   step={0.1}  suffix="%" hint="→ bonus bank"  />
+              <NumInput label="Coefficient Limit"         value={coeffLimit}     onChange={setCoeffLimit}     min={10}   step={10}               hint="total to trigger"  />
+              <NumInput label="Bonus Pool Expiration"     value={expiryHrs}      onChange={setExpiryHrs}      min={1}    step={1}   suffix="hrs" hint="inactivity reset" />
+
+              {/* Number of Boxes */}
+              <div style={{ marginBottom:14 }}>
+                <Label>Number of Boxes</Label>
+                <div style={{ display:"flex", gap:6 }}>
+                  {[4,6,8].map(n => (
+                    <button key={n} onClick={() => handleNumBoxes(n)} style={{
+                      flex:1, padding:"9px 0", borderRadius:7, cursor:"pointer", fontFamily:"inherit",
+                      border:`1px solid ${numBoxes===n ? T.gold : T.border}`,
+                      background: numBoxes===n ? T.goldBg : T.bg,
+                      color: numBoxes===n ? T.gold : T.soft,
+                      fontWeight:800, fontSize:15, transition:"all 0.15s",
+                    }}>{n}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Box Percentages */}
+              <div style={{ marginBottom:16 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                  <span style={{ color:T.soft, fontSize:12, fontWeight:600 }}>Box Percentages</span>
+                  <span style={{
+                    fontSize:12, fontWeight:700,
+                    color: Math.abs(boxSum-100) < 0.01 ? T.green : T.red,
+                  }}>
+                    Σ {boxSum.toFixed(1)}% {Math.abs(boxSum-100) < 0.01 ? "✓" : "≠ 100"}
+                  </span>
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:5 }}>
+                  {boxPcts.map((p, i) => (
+                    <div key={i} style={{
+                      display:"flex", alignItems:"center", gap:7,
+                      background:T.bg, border:`1px solid ${T.border}`, borderRadius:7,
+                      padding:"6px 10px",
+                    }}>
+                      <div style={{ width:10, height:10, borderRadius:3, flexShrink:0, background:BOX_COLORS[i] }} />
+                      <input
+                        type="number" value={p}
+                        onChange={e => handleBoxPct(i, e.target.value)}
+                        min={0} max={100} step={1}
+                        style={{
+                          background:"transparent", border:"none", outline:"none",
+                          color:T.text, fontSize:13, fontWeight:700,
+                          width:"100%", fontFamily:"inherit",
+                        }}
+                      />
+                      <span style={{ color:T.muted, fontSize:12 }}>%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mode Toggle */}
+              <div style={{ marginBottom:16 }}>
+                <Label>Bonus Mode</Label>
+                <div style={{ display:"flex", gap:6 }}>
+                  {[
+                    { id:"standard",    emoji:"🔄", title:"Standard",    sub:"Rest expires" },
+                    { id:"progressive", emoji:"📈", title:"Progressive", sub:"Rest carries over" },
+                  ].map(m => (
+                    <button key={m.id} onClick={() => setMode(m.id)} style={{
+                      flex:1, padding:"10px 8px", borderRadius:8,
+                      cursor:"pointer", fontFamily:"inherit", textAlign:"center",
+                      border:`1px solid ${mode===m.id ? T.gold : T.border}`,
+                      background: mode===m.id ? T.goldBg : T.bg,
+                      color: mode===m.id ? T.gold : T.soft,
+                      transition:"all 0.15s",
+                    }}>
+                      <div style={{ fontSize:15, marginBottom:2 }}>{m.emoji}</div>
+                      <div style={{ fontWeight:800, fontSize:12 }}>{m.title}</div>
+                      <div style={{ fontSize:10, opacity:0.7, marginTop:1 }}>{m.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <SectionHead icon="📈" title="Promo Impact Assumptions" />
+              <NumInput label="Player Count Increase"     value={playerUp}     onChange={setPlayerUp}     min={0} max={500} step={1}   suffix="%" hint="vs baseline"    />
+              <NumInput label="Bets per Player Increase"  value={betCntUp}     onChange={setBetCntUp}     min={0} max={500} step={1}   suffix="%" hint="engagement lift" />
+              <NumInput label="Avg Bet Amount Increase"   value={betAmtUp}     onChange={setBetAmtUp}     min={0} max={200} step={0.5} suffix="%" hint="higher stakes"   />
+              <NumInput label="Forecast Period"           value={forecastDays} onChange={setForecastDays} min={1} step={1}             suffix="days"                    />
+
+            </div>
+
+            {/* ══ RIGHT PANEL: RESULTS ══ */}
+            <div style={{ flex:1, overflowY:"auto", padding:"10px 24px 40px", minWidth:0 }}>
+
+              {/* A — Trigger Analysis */}
+              <SectionHead icon="🎯" title="Bonus Trigger Analysis" />
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:20 }}>
+                <KpiCard
+                  label="Bets to Trigger"
+                  value={nf(R.betsPerCycle)}
+                  sub={`Avg coeff/bet: ${R.avgCoeffPerBet.toFixed(2)}  ·  ${(R.betsPerCycle/betsPerPlayer).toFixed(1)} days/player`}
+                  accent={T.gold}
+                />
+                <KpiCard
+                  label="Bank per Trigger"
+                  value={$f(R.bankPerCycle)}
+                  sub={`${betAmtPct}% × ${nf(R.betsPerCycle)} bets × $${avgBet}`}
+                  accent={T.teal}
+                />
+                <KpiCard
+                  label="Triggers / Player"
+                  value={R.cyclesPerPlayerForecastA.toFixed(1)}
+                  sub={`over ${forecastDays} days (with promo)`}
+                  accent={T.purple}
+                />
+                <KpiCard
+                  label="Payout per Trigger"
+                  value={$f(payoutPerTrigger)}
+                  sub={mode==="standard"
+                    ? `${pf(R.meanBox,1)} of bank (avg random box)`
+                    : `~100% at steady-state (~${numBoxes} cycles)`}
+                  accent={T.orange}
+                />
+              </div>
+
+              {/* B — Box Distribution */}
+              <SectionHead icon="📦" title="Box Distribution & Payouts" />
+              <div style={{
+                background:T.card, border:`1px solid ${T.border}`,
+                borderRadius:12, padding:"16px 20px", marginBottom:20,
+              }}>
+                <div style={{
+                  display:"flex", alignItems:"center", gap:20, marginBottom:14,
+                  paddingBottom:12, borderBottom:`1px solid ${T.border}`, flexWrap:"wrap", rowGap:6,
+                }}>
+                  <div>
+                    <span style={{ color:T.muted, fontSize:12 }}>Bank per trigger cycle </span>
+                    <span style={{ color:T.gold, fontWeight:800, fontSize:15 }}>{$f(R.bankPerCycle)}</span>
+                  </div>
+                  {mode==="progressive" && (
+                    <div>
+                      <span style={{ color:T.muted, fontSize:12 }}>Steady-state bank </span>
+                      <span style={{ color:T.teal, fontWeight:800, fontSize:15 }}>{$f(R.progSteadyBank)}</span>
+                      <span style={{ color:T.muted, fontSize:11 }}> (after ~{numBoxes} cycles)</span>
+                    </div>
+                  )}
+                </div>
+
+                {boxPcts.map((pct, i) => {
+                  const refBank = mode==="standard" ? R.bankPerCycle : R.progSteadyBank;
+                  const payout  = refBank * (pct / 100);
+                  const barW    = R.maxBox > 0 ? `${(pct / R.maxBox) * 100}%` : "0%";
+                  return (
+                    <div key={i} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:7 }}>
+                      <div style={{ width:22, textAlign:"right", color:T.muted, fontSize:12, flexShrink:0 }}>#{i+1}</div>
+                      <div style={{ flex:1, background:T.bg, borderRadius:5, overflow:"hidden", height:28 }}>
+                        <div style={{
+                          width:barW, height:"100%",
+                          background:`linear-gradient(90deg,${BOX_COLORS[i]}55,${BOX_COLORS[i]})`,
+                          borderRadius:5, transition:"width 0.3s ease",
+                          display:"flex", alignItems:"center", paddingLeft:8,
+                        }}>
+                          <span style={{ color:"#fff", fontSize:12, fontWeight:800, whiteSpace:"nowrap", textShadow:"0 1px 3px rgba(0,0,0,0.8)" }}>
+                            {pct}%
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ width:76, color:BOX_COLORS[i], fontSize:13, fontWeight:700, textAlign:"right", flexShrink:0 }}>
+                        {$f(payout)}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div style={{ marginTop:12, paddingTop:12, borderTop:`1px solid ${T.border}`, display:"flex", gap:24, flexWrap:"wrap", rowGap:6 }}>
+                  {[
+                    { label:"Min payout", value:$f((mode==="standard"?R.bankPerCycle:R.progSteadyBank)*R.minBox/100), hint:`(${pf(R.minBox,0)} box)`, color:T.soft },
+                    { label:"Max payout", value:$f((mode==="standard"?R.bankPerCycle:R.progSteadyBank)*R.maxBox/100), hint:`(${pf(R.maxBox,0)} box)`, color:T.gold },
+                    { label:"Avg payout (random pick)", value:$f(payoutPerTrigger), hint:"", color:T.teal },
+                  ].map((s,i) => (
+                    <div key={i}>
+                      <span style={{ color:T.muted, fontSize:11 }}>{s.label} </span>
+                      <span style={{ color:s.color, fontWeight:800, fontSize:14 }}>{s.value}</span>
+                      {s.hint && <span style={{ color:T.muted, fontSize:11 }}> {s.hint}</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* C — Std vs Progressive Comparison */}
+              <SectionHead icon="⚖️" title="Standard vs Progressive Comparison" />
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
+                {[
+                  {
+                    id:"standard", icon:"🔄", label:"Standard Mode",
+                    rows:[
+                      ["Payout per trigger",        $f(R.stdPayoutPerTrigger),         false],
+                      ["% of bank paid to player",  pf(R.meanBox,1),                   false],
+                      ["% of bank expired (house)", pf(R.stdBankExpiredPct,1),          true ],
+                      ["Effective cost to operator",pf(R.costPctStd,3)+" of bets",      false],
+                      [`Bonus paid (${forecastDays}d)`, $f(R.bonusPaidStd,true),        false],
+                      [`GGR (${forecastDays}d)`,    $f(R.ggrAfterStd,true),             true ],
+                    ],
+                  },
+                  {
+                    id:"progressive", icon:"📈", label:"Progressive Mode",
+                    rows:[
+                      ["Payout/trigger (steady-st.)", $f(R.progPayoutPerTrigger),       true ],
+                      ["% of bank paid to player",    "~100%",                           true ],
+                      ["Steady-state bank",           $f(R.progSteadyBank),             false],
+                      ["Effective cost to operator",  pf(R.costPctProg,3)+" of bets",   false],
+                      [`Bonus paid (${forecastDays}d)`, $f(R.bonusPaidProg,true),       false],
+                      [`GGR (${forecastDays}d)`,      $f(R.ggrAfterProg,true),          true ],
+                    ],
+                  },
+                ].map(m => (
+                  <div key={m.id} style={{
+                    background:T.card,
+                    border:`2px solid ${mode===m.id ? T.gold : T.border}`,
+                    borderRadius:12, padding:"14px 16px",
+                    position:"relative", overflow:"hidden",
+                  }}>
+                    {mode===m.id && (
+                      <div style={{
+                        position:"absolute", top:0, right:0,
+                        background:T.gold, color:"#000",
+                        fontSize:9, fontWeight:900, letterSpacing:"0.1em",
+                        padding:"3px 10px", borderBottomLeftRadius:7,
+                      }}>ACTIVE MODE</div>
+                    )}
+                    <div style={{ display:"flex", alignItems:"center", gap:7, marginBottom:12 }}>
+                      <span style={{ fontSize:18 }}>{m.icon}</span>
+                      <span style={{ fontWeight:800, color:T.text, fontSize:14 }}>{m.label}</span>
+                    </div>
+                    {m.rows.map(([lbl,val,hi],j) => (
+                      <div key={j} style={{
+                        display:"flex", justifyContent:"space-between", alignItems:"center",
+                        padding:"7px 0",
+                        borderBottom: j<m.rows.length-1 ? `1px solid ${T.border}` : "none",
+                      }}>
+                        <span style={{ color:T.soft, fontSize:12 }}>{lbl}</span>
+                        <span style={{ color:hi ? T.gold : T.text, fontWeight:700, fontSize:13 }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+
+              {/* D — Forecast Summary Table */}
+              <SectionHead icon="📅" title={`${forecastDays}-Day Forecast Summary`} />
+              <div style={{
+                background:T.card, border:`1px solid ${T.border}`,
+                borderRadius:12, padding:"16px 20px", marginBottom:20, overflowX:"auto",
+              }}>
+                <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
+                  <thead>
+                    <tr>
+                      {["Metric","Without Promo","With Promo","Δ Change"].map((h,i) => (
+                        <th key={i} style={{
+                          textAlign:i===0?"left":"right", paddingBottom:12,
+                          color:[T.muted,T.soft,T.gold,T.teal][i],
+                          fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.07em",
+                        }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { label:"Active Players / Day",   hl:false, before:nf(players),             after:nf(R.playersA),            delta:`+${pf(playerUp,0)}`,                                                              dc:T.green },
+                      { label:"Avg Bets / Player / Day",hl:false, before:nf(betsPerPlayer),        after:nf(R.betsPerPlayerA),      delta:`+${pf(betCntUp,0)}`,                                                              dc:T.green },
+                      { label:"Avg Bet Amount",         hl:false, before:$f(avgBet),               after:$f(R.avgBetA),             delta:`+${pf(betAmtUp,0)}`,                                                              dc:T.green },
+                      { label:"Total Bets",             hl:false, before:nf(R.totBetsBefore),      after:nf(R.totBetsAfter),        delta:`+${pf(((R.totBetsAfter-R.totBetsBefore)/R.totBetsBefore)*100,1)}`,                dc:T.green },
+                      { label:"Total Bet Volume",       hl:false, before:$f(R.totAmtBefore,true),  after:$f(R.totAmtAfter,true),    delta:`+${pf(R.volumeGrowthPct,1)}`,                                                     dc:T.green },
+                      { label:"Bonus Bank Funded",      hl:false, before:"—",                      after:$f(R.bonusBank,true),      delta:`${pf(betAmtPct,1)} of bets`,                                                      dc:T.soft  },
+                      { label:"Bonus Paid to Players",  hl:false, before:"—",                      after:$f(R.bonusPaid,true),      delta: mode==="standard" ? `${pf(R.meanBox,1)} of bank` : "~100% of bank",              dc:T.soft  },
+                      { label:"⚡ Gross Gaming Revenue",hl:true,  before:$f(R.ggrBefore,true),     after:$f(R.ggrAfter,true),       delta:`${R.ggrDelta>=0?"+":""}${pf(R.ggrDeltaPct,1)}`,                                   dc:R.ggrDelta>=0?T.green:T.red },
+                      { label:"Effective House Edge",   hl:false, before:pf(R.effHouseBase,2),      after:pf(R.effHouseAfter,2),     delta:pf(R.effHouseAfter-R.effHouseBase,3),                                               dc:R.effHouseAfter>=R.effHouseBase?T.green:T.orange },
+                    ].map((row,i) => (
+                      <tr key={i} style={{ background:row.hl ? T.goldBg : "transparent" }}>
+                        <td style={{ padding:"9px 0", borderTop:`1px solid ${T.border}`, color:row.hl?T.gold:T.soft, fontWeight:row.hl?700:400 }}>{row.label}</td>
+                        <td style={{ padding:"9px 0", borderTop:`1px solid ${T.border}`, textAlign:"right", color:T.soft, fontFamily:"monospace" }}>{row.before}</td>
+                        <td style={{ padding:"9px 0", borderTop:`1px solid ${T.border}`, textAlign:"right", color:T.text, fontWeight:600, fontFamily:"monospace" }}>{row.after}</td>
+                        <td style={{ padding:"9px 0", borderTop:`1px solid ${T.border}`, textAlign:"right", color:row.dc, fontWeight:700, fontFamily:"monospace" }}>{row.delta}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* E — Daily Averages */}
+              <SectionHead icon="📆" title="Daily Averages (With Promo Active)" />
+              <div style={{ display:"flex", gap:10, flexWrap:"wrap", marginBottom:20 }}>
+                {[
+                  { label:"Active Players",  val:nf(R.playersA),                         color:T.text   },
+                  { label:"Total Bets",      val:nf(R.totBetsAfter/forecastDays),         color:T.text   },
+                  { label:"Bet Volume",      val:$f(R.totAmtAfter/forecastDays,true),      color:T.teal   },
+                  { label:"Bonus Triggers",  val:nf(R.dailyBonusTriggers),               color:T.gold   },
+                  { label:"Bonus Paid",      val:$f(R.bonusPaid/forecastDays,true),        color:T.orange },
+                  { label:"Daily GGR",       val:$f(R.ggrAfter/forecastDays,true),        color:T.green  },
+                ].map((k,i) => (
+                  <div key={i} style={{
+                    background:T.card, border:`1px solid ${T.border}`,
+                    borderRadius:9, padding:"10px 14px", flex:"1 1 140px",
+                  }}>
+                    <div style={{ color:T.muted, fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:5 }}>{k.label}</div>
+                    <div style={{ color:k.color, fontSize:20, fontWeight:800 }}>{k.val}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* F — Key Insights */}
+              <SectionHead icon="💡" title="Key Insights" />
+              <div style={{ display:"flex", flexWrap:"wrap", gap:12, marginBottom:10 }}>
+                <InsightCard
+                  icon="🎯" accent={T.purple} title="Trigger Frequency"
+                  body={`A player needs ${nf(R.betsPerCycle)} bets to complete the coefficient pool (avg ${R.avgCoeffPerBet.toFixed(2)} coeff/bet). At ${betsPerPlayer} bets/day that's one trigger every ${(R.betsPerCycle/betsPerPlayer).toFixed(1)} days. With the promo, each player triggers ${R.cyclesPerPlayerForecastA.toFixed(1)} times over the ${forecastDays}-day period.`}
+                />
+                <InsightCard
+                  icon="💰" accent={T.teal} title="Operator Cost Comparison"
+                  body={`Standard mode costs only ${pf(R.costPctStd,3)} of total bets in actual payouts — ${pf(R.stdBankExpiredPct,1)} of each bonus bank expires. Progressive pays out ${pf(R.costPctProg,2)} of bets. Standard is ${(R.costPctProg/Math.max(R.costPctStd,0.001)).toFixed(1)}× cheaper while still creating a strong engagement hook.`}
+                />
+                <InsightCard
+                  icon="⚡" accent={T.gold} title="Progressive Bank Growth"
+                  body={`In Progressive mode the carryover bank compounds each cycle. After ~${numBoxes} cycles the steady-state bank reaches ${$f(R.progSteadyBank)} — ${numBoxes}× a single cycle's accumulation of ${$f(R.bankPerCycle)}. Players see dramatically escalating trigger sizes, driving long-session retention.`}
+                />
+                <InsightCard
+                  icon="📊" accent={R.ggrDelta>=0?T.green:T.orange} title="GGR Impact"
+                  body={`The promo grows total bet volume by ${pf(R.volumeGrowthPct,1)} over ${forecastDays} days. Net GGR ${R.ggrDelta>=0?"increases":"changes"} by ${$f(Math.abs(R.ggrDelta),true)} (${R.ggrDelta>=0?"+":""}${pf(R.ggrDeltaPct,1)}) in ${mode} mode. The volume lift more than compensates for the bonus cost in the base scenario.`}
+                />
+              </div>
+
+            </div>
+            {/* END RIGHT PANEL */}
+          </div>
+          {/* END TWO-COLUMN BODY */}
+        </div>
+      );
+    }
+
+    // ─── MOUNT ───────────────────────────────────────────────────────────────
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<LightningBonusCalculator />);
+  </script>
+</body>
+</html>
