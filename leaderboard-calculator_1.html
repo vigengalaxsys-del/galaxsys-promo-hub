@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard Calculator · Galaxsys</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.25.6/babel.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #070E18; font-family: Inter, system-ui, sans-serif; }
+  input[type=range] { -webkit-appearance: none; height: 4px; border-radius: 4px; cursor: pointer; outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 15px; height: 15px; border-radius: 50%; background: #00CFA8; cursor: pointer; box-shadow: 0 0 0 3px rgba(0,207,168,0.12); }
+  input[type=range]::-moz-range-thumb { width: 15px; height: 15px; border-radius: 50%; background: #00CFA8; border: none; cursor: pointer; }
+  input[type=number]::-webkit-inner-spin-button { opacity: 0.25; }
+  select option { background: #122131; color: #E8EEF8; }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #1D3049; border-radius: 3px; }
+  button { font-family: inherit; }
+</style>
+</head>
+<body>
+<a href="index.html" style="
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  color: #6b7280;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: color 0.2s, box-shadow 0.2s;
+" onmouseover="this.style.color='#111827';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'"
+   onmouseout="this.style.color='#6b7280';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
+  &#8592; Hub
+</a>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useMemo, useEffect } = React;
+
+/* ─── Design tokens ───────────────────────────────────────────── */
+const C = {
+  bg:        "#070E18",
+  surface:   "#0D1B2B",
+  surface2:  "#122131",
+  surface3:  "#182A3E",
+  border:    "#1D3049",
+  accent:    "#00CFA8",
+  accentDim: "rgba(0,207,168,0.10)",
+  purple:    "#8B7BFF",
+  purpleDim: "rgba(139,123,255,0.10)",
+  gold:      "#F0B429",
+  goldDim:   "rgba(240,180,41,0.10)",
+  text:      "#E8EEF8",
+  textSec:   "#6A88A8",
+  textMut:   "#304560",
+  success:   "#00CFA8",
+  danger:    "#FF5A5A",
+  warning:   "#F0B429",
+};
+
+/* ─── FX reference rates vs EUR ──────────────────────────────── */
+const FX = {
+  EUR:1, USD:1.08, GBP:0.86, CAD:1.47, AUD:1.64,
+  NOK:11.4, SEK:11.2, DKK:7.46, CHF:0.96, PLN:4.28,
+  CZK:25.1, HUF:392, RON:4.97, BRL:5.5, MXN:18.2,
+  INR:89.5, JPY:160, KRW:1440, CNY:7.8, NZD:1.77,
+};
+const ALL_CURS = Object.keys(FX);
+
+/* ─── Config type labels ──────────────────────────────────────── */
+const CONFIG_LABELS = {
+  "single-single": "1 Partner / 1 Game",
+  "single-multi":  "1 Partner / Multiple Games",
+  "multi-single":  "Multiple Partners / 1 Game",
+  "multi-multi":   "Multiple Partners / Multiple Games",
+};
+
+/* ─── Helpers ─────────────────────────────────────────────────── */
+const fmt  = (n, d=0) => (isNaN(n)||n==null) ? "—"
+  : new Intl.NumberFormat("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}).format(n);
+const fmtE = (n, d=0) => (isNaN(n)||n==null) ? "—" : "€"+fmt(n,d);
+const pct  = (n, d=1) => (isNaN(n)||n==null) ? "—" : fmt(n,d)+"%";
+const clamp = (v, a, b) => Math.min(Math.max(v,a),b);
+
+/* ─── SVG Icons ───────────────────────────────────────────────── */
+function TrophyIcon({size=18,color="currentColor"}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 9H4.5a2.5 2.5 0 010-5H6M18 9h1.5a2.5 2.5 0 000-5H18M4 22h16"/>
+      <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+      <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+      <path d="M18 2H6v7a6 6 0 0012 0V2z"/>
+    </svg>
+  );
+}
+function PlusIcon({size=12,color="currentColor"}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth={2.5} strokeLinecap="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  );
+}
+function TrashIcon({size=13,color="currentColor"}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+    </svg>
+  );
+}
+function InfoIcon({size=14,color="currentColor"}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+    </svg>
+  );
+}
+
+/* ─── Horizontal Uplift Chart (SVG, no library) ───────────────── */
+function UpliftChart({items}) {
+  const maxU = Math.max(...items.map(i=>Math.abs(i.uplift)), 1);
+  const rowH = 38, W = 520, lblW = 175, barZone = 260, valW = 85;
+  const H = items.length * rowH + 6;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{width:"100%",display:"block"}}>
+      {items.map((item, i) => {
+        const y = i * rowH;
+        const bw = Math.max((Math.abs(item.uplift) / maxU) * (barZone * 0.88), 2);
+        const isPos = item.uplift >= 0;
+        const col = isPos ? C.accent : C.danger;
+        return (
+          <g key={i}>
+            <text x={lblW-8} y={y+23} textAnchor="end"
+              fill={C.textSec} fontSize={10} fontFamily="Inter, sans-serif">{item.label}</text>
+            <rect x={lblW} y={y+11} width={barZone} height={16} fill={C.border} rx={4}/>
+            <rect x={lblW} y={y+11} width={bw} height={16} fill={col} rx={4}/>
+            <text x={lblW+barZone+valW-4} y={y+23} textAnchor="end"
+              fill={col} fontSize={11} fontFamily="monospace" fontWeight="bold">
+              {isPos?"+":""}{item.uplift.toFixed(1)}%
+            </text>
+            <text x={lblW+barZone+6} y={y+23}
+              fill={C.textMut} fontSize={9} fontFamily="monospace">
+              {item.before} → {item.after}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+/* ─── UI primitives ───────────────────────────────────────────── */
+function Label({children}) {
+  return (
+    <div style={{
+      fontSize:10, fontWeight:700, color:C.textSec, textTransform:"uppercase",
+      letterSpacing:"0.07em", fontFamily:"Inter,sans-serif", marginBottom:5,
+    }}>{children}</div>
+  );
+}
+
+function Inp({label,value,onChange,type="number",prefix,suffix,min,max,step=1,hint,readonly}) {
+  const [draft, setDraft]     = useState(String(value));
+  const [focused, setFocused] = useState(false);
+
+  // Sync display when parent changes the value externally (e.g. scope toggle resets partners)
+  useEffect(() => {
+    if (!focused) setDraft(String(value));
+  }, [value, focused]);
+
+  const handleChange = e => {
+    if (readonly) return;
+    if (type !== "number") { onChange(e.target.value); return; }
+    const raw = e.target.value;
+    setDraft(raw);                          // always show what user typed
+    const parsed = parseFloat(raw);
+    if (!isNaN(parsed)) onChange(parsed);   // commit only when valid
+  };
+
+  const handleBlur = () => {
+    setFocused(false);
+    if (type !== "number") return;
+    const parsed = parseFloat(draft);
+    if (isNaN(parsed)) {
+      setDraft(String(value));              // restore last good value on empty blur
+    } else {
+      setDraft(String(parsed));             // normalise (strip trailing dot etc.)
+      onChange(parsed);
+    }
+  };
+
+  const displayVal = type === "number" ? draft : value;
+
+  return (
+    <div style={{marginBottom:13}}>
+      {label && <Label>{label}</Label>}
+      <div style={{
+        display:"flex", alignItems:"center", background:C.surface2,
+        border:`1px solid ${C.border}`, borderRadius:8, overflow:"hidden",
+        opacity: readonly ? 0.55 : 1,
+      }}>
+        {prefix && (
+          <span style={{padding:"0 10px",color:C.textSec,fontSize:12,
+            borderRight:`1px solid ${C.border}`,fontFamily:"monospace",whiteSpace:"nowrap"}}>
+            {prefix}
+          </span>
+        )}
+        <input
+          readOnly={!!readonly}
+          type={type} value={displayVal}
+          onFocus={() => setFocused(true)}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          min={min} max={max} step={step}
+          style={{
+            flex:1, background:"transparent", border:"none", outline:"none",
+            padding:"8px 11px", color:C.text, fontSize:13,
+            fontFamily: type==="number" ? "monospace" : "Inter,sans-serif",
+          }}
+        />
+        {suffix && (
+          <span style={{padding:"0 10px",color:C.textSec,fontSize:11,
+            borderLeft:`1px solid ${C.border}`,whiteSpace:"nowrap"}}>
+            {suffix}
+          </span>
+        )}
+      </div>
+      {hint && <div style={{fontSize:10,color:C.textMut,marginTop:3}}>{hint}</div>}
+    </div>
+  );
+}
+
+// Inline number input for table cells — same draft-state pattern
+function NumInput({value, onChange, style, min, max, step}) {
+  const [draft, setDraft]     = useState(String(value));
+  const [focused, setFocused] = useState(false);
+
+  useEffect(() => {
+    if (!focused) setDraft(String(value));
+  }, [value, focused]);
+
+  return (
+    <input
+      type="number"
+      value={draft}
+      onFocus={() => setFocused(true)}
+      onChange={e => {
+        setDraft(e.target.value);
+        const p = parseFloat(e.target.value);
+        if (!isNaN(p)) onChange(p);
+      }}
+      onBlur={() => {
+        setFocused(false);
+        const p = parseFloat(draft);
+        if (isNaN(p)) setDraft(String(value));
+        else { setDraft(String(p)); onChange(p); }
+      }}
+      min={min} max={max} step={step}
+      style={style}
+    />
+  );
+}
+
+function SliderInput({label,value,onChange,min=0,max=100,step=1,suffix="%"}) {
+  const fill = ((value-min)/(max-min))*100;
+  return (
+    <div style={{marginBottom:18}}>
+      <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
+        <Label>{label}</Label>
+        <span style={{fontSize:13,fontFamily:"monospace",fontWeight:700,color:C.accent,marginTop:-2}}>
+          {value}{suffix}
+        </span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e=>onChange(Number(e.target.value))}
+        style={{
+          width:"100%",cursor:"pointer",accentColor:C.accent,
+          WebkitAppearance:"none",height:4,borderRadius:4,
+          background:`linear-gradient(to right,${C.accent} ${fill}%,${C.border} 0)`,
+        }}
+      />
+      <div style={{display:"flex",justifyContent:"space-between",marginTop:2}}>
+        <span style={{fontSize:9,color:C.textMut}}>{min}{suffix}</span>
+        <span style={{fontSize:9,color:C.textMut}}>{max}{suffix}</span>
+      </div>
+    </div>
+  );
+}
+
+function Card({children,style={}}) {
+  return (
+    <div style={{background:C.surface,border:`1px solid ${C.border}`,
+      borderRadius:14,padding:20,...style}}>
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({children}) {
+  return (
+    <div style={{
+      fontSize:11,fontWeight:700,color:C.textSec,textTransform:"uppercase",
+      letterSpacing:"0.08em",fontFamily:"Inter,sans-serif",
+      marginBottom:14,paddingBottom:10,borderBottom:`1px solid ${C.border}`,
+    }}>{children}</div>
+  );
+}
+
+function KpiCompare({label,before,after,formatFn,color}) {
+  const delta    = after - before;
+  const deltaPct = before > 0 ? (delta/before*100) : 0;
+  const isPos    = delta >= 0;
+  const col      = color || C.accent;
+  return (
+    <div style={{background:C.surface,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
+      <div style={{fontSize:10,color:C.textSec,textTransform:"uppercase",letterSpacing:"0.06em",
+        fontWeight:700,fontFamily:"Inter,sans-serif",marginBottom:11}}>
+        {label}
+      </div>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:8}}>
+        <div>
+          <div style={{fontSize:10,color:C.textMut,marginBottom:2}}>Baseline</div>
+          <div style={{fontSize:14,fontFamily:"monospace",color:C.textSec}}>{formatFn(before)}</div>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:10,color:C.textMut,marginBottom:2}}>Forecast</div>
+          <div style={{fontSize:17,fontFamily:"monospace",fontWeight:700,color:col}}>{formatFn(after)}</div>
+        </div>
+      </div>
+      <div style={{marginTop:9,paddingTop:9,borderTop:`1px solid ${C.border}`,
+        display:"flex",alignItems:"center",gap:6}}>
+        <span style={{fontSize:11,color:isPos?C.success:C.danger,fontFamily:"monospace",fontWeight:700}}>
+          {isPos?"▲":"▼"} {pct(Math.abs(deltaPct))}
+        </span>
+        <span style={{fontSize:10,color:C.textMut}}>vs baseline</span>
+      </div>
+    </div>
+  );
+}
+
+function RowKpi({label,value,color}) {
+  return (
+    <div style={{display:"flex",justifyContent:"space-between",
+      padding:"9px 0",borderBottom:`1px solid ${C.border}30`}}>
+      <span style={{fontSize:12,color:C.textSec}}>{label}</span>
+      <span style={{fontSize:13,fontFamily:"monospace",fontWeight:700,color:color||C.text}}>{value}</span>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   MAIN COMPONENT
+═══════════════════════════════════════════════════════════════════ */
+function LeaderboardCalculator() {
+  const [tab, setTab] = useState(0);
+
+  /* Tab 1 */
+  const [name,        setName]        = useState("Q1 Leaderboard Sprint");
+  const [configType,  setConfigType]  = useState("multi-multi");
+  const [partners,    setPartners]    = useState(3);
+  const [games,       setGames]       = useState(2);
+  const [duration,    setDuration]    = useState(14);
+
+  /* Tab 2 */
+  const [eurPerPt,   setEurPerPt]   = useState(0.10);
+  const [minBet,     setMinBet]     = useState(1.00);
+  const [minMult,    setMinMult]    = useState(1.50);
+  const [currencies, setCurrencies] = useState([
+    {id:1,code:"EUR",prizePool:10000,minBet:1.00, ptRate:10},
+    {id:2,code:"USD",prizePool:10800,minBet:1.10, ptRate:10},
+    {id:3,code:"GBP",prizePool:8600, minBet:0.86, ptRate:10},
+    {id:4,code:"CAD",prizePool:14700,minBet:1.47, ptRate:10},
+  ]);
+
+  /* Tab 3 */
+  const [freeBetCostPct, setFreeBetCostPct] = useState(20);
+  const [galaxysFund,    setGalaxysFund]    = useState(50);
+  const [prizes, setPrizes] = useState([
+    {id:1,from:1, to:1, type:"real_money", amount:2000,bc:10,ba:1},
+    {id:2,from:2, to:3, type:"real_money", amount:1000,bc:10,ba:1},
+    {id:3,from:4, to:10,type:"free_bets",  amount:100, bc:10,ba:10},
+    {id:4,from:11,to:25,type:"free_amount",amount:25,  bc:10,ba:1},
+  ]);
+
+  /* Tab 4 */
+  const [dap,      setDap]      = useState(500);
+  const [avgBC,    setAvgBC]    = useState(280);
+  const [avgBS,    setAvgBS]    = useState(2.00);
+  const [ggrPct,   setGgrPct]   = useState(4.0);
+  const [revShare, setRevShare] = useState(15.0);
+
+  /* Tab 5 */
+  const [partRate,  setPartRate]  = useState(30);
+  const [bcUplift,  setBcUplift]  = useState(35);
+  const [bsUplift,  setBsUplift]  = useState(20);
+
+  /* ─── Derived: prize pool ─────────────────────────────────── */
+  const prizeCalc = useMemo(() => {
+    let faceVal = 0, actualCost = 0;
+    prizes.forEach(p => {
+      const n = Math.max(0, p.to - p.from + 1);
+      if (p.type === "real_money")  { faceVal += n*p.amount; actualCost += n*p.amount; }
+      if (p.type === "free_bets")   { const fv = n*p.bc*p.ba; faceVal += fv; actualCost += fv*(freeBetCostPct/100); }
+      if (p.type === "free_amount") { faceVal += n*p.amount; actualCost += n*p.amount; }
+    });
+    const totalWinners = prizes.reduce((s,p)=>s+Math.max(0,p.to-p.from+1), 0);
+    const galaxysCost  = actualCost * (galaxysFund/100);
+    return { faceVal, actualCost, galaxysCost, partnerCost: actualCost-galaxysCost, totalWinners };
+  }, [prizes, freeBetCostPct, galaxysFund]);
+
+  /* ─── Derived: forecast ───────────────────────────────────── */
+  const fc = useMemo(() => {
+    const streams  = partners * games;
+    const totalPly = dap * streams;
+    const days     = duration;
+
+    /* Baseline — avgBC is total bets per player for the full leaderboard period */
+    const baseBC    = avgBC;                // already a period total
+    const baseBS    = avgBS;
+    const baseBAmtP = baseBC * baseBS;
+    const baseTBC   = totalPly * baseBC;
+    const baseTBA   = totalPly * baseBAmtP;
+    const baseGGR   = baseTBA * (ggrPct/100);
+    const baseGRev  = baseGGR * (revShare/100);
+
+    /* Uplift — participating players increase their period bet count and size */
+    const prtPly      = totalPly * (partRate/100);
+    const nPrtPly     = totalPly - prtPly;
+    const prtBcPeriod = avgBC * (1 + bcUplift/100);   // uplifted period total for participants
+    const prtBs       = Math.max(avgBS * (1 + bsUplift/100), minBet);
+
+    // Period totals: participants use uplifted figures, non-participants use baseline
+    const newTBC = prtPly*prtBcPeriod + nPrtPly*avgBC;
+    const newTBA = prtPly*prtBcPeriod*prtBs + nPrtPly*avgBC*avgBS;
+    const newGGR     = newTBA * (ggrPct/100);
+    const newGRev    = newGGR * (revShare/100);
+
+    const newBCperPly = newTBC / totalPly;
+    const newBSavg    = newTBC > 0 ? newTBA/newTBC : 0;
+    const newBAperPly = newTBA / totalPly;
+
+    const incrGGR   = newGGR  - baseGGR;
+    const incrGRev  = newGRev - baseGRev;
+    const netGalaxys = incrGRev - prizeCalc.galaxysCost;
+    const roi = prizeCalc.galaxysCost > 0 ? (netGalaxys/prizeCalc.galaxysCost*100) : 0;
+
+    /* Break-even */
+    // Incremental revenue per participating player for the full period
+    const upliftPerPartTour = (prtBcPeriod*prtBs - avgBC*avgBS) * (ggrPct/100) * (revShare/100);
+    const bePartCount       = upliftPerPartTour > 0 ? prizeCalc.galaxysCost/upliftPerPartTour : null;
+    const beRate            = bePartCount != null ? clamp((bePartCount/totalPly)*100, 0, 100) : null;
+
+    return {
+      totalPly, prtPly,
+      baseBC, baseBS, baseBAmtP, baseTBC, baseTBA, baseGGR, baseGRev,
+      newBCperPly, newBSavg, newBAperPly, newTBC, newTBA, newGGR, newGRev,
+      incrGGR, incrGRev, netGalaxys, roi, beRate,
+    };
+  }, [partners, games, dap, duration, avgBC, avgBS, ggrPct, revShare,
+      partRate, bcUplift, bsUplift, minBet, prizeCalc]);
+
+  /* ─── Prize helpers ───────────────────────────────────────── */
+  const addPrize = () => {
+    const last = prizes[prizes.length-1];
+    const nf   = last ? last.to+1 : 1;
+    setPrizes([...prizes, {id:Date.now(),from:nf,to:nf+4,type:"real_money",amount:100,bc:10,ba:1}]);
+  };
+  const delPrize = id => setPrizes(prizes.filter(p=>p.id!==id));
+  const updPrize = (id,k,v) => setPrizes(prizes.map(p=>p.id===id ? {...p,[k]:isNaN(v)?v:(+v||0)} : p));
+
+  /* ─── Currency helpers ────────────────────────────────────── */
+  const addCur = code => {
+    if (currencies.find(c=>c.code===code)) return;
+    const r = FX[code]||1;
+    setCurrencies([...currencies,{id:Date.now(),code,
+      prizePool:Math.round(prizeCalc.faceVal*r),
+      minBet:parseFloat((minBet*r).toFixed(2)),ptRate:10}]);
+  };
+  const delCur = id => setCurrencies(currencies.filter(c=>c.id!==id));
+  const updCur = (id,k,v) => setCurrencies(currencies.map(c=>c.id===id ? {...c,[k]:+v||0} : c));
+  const availCurs = ALL_CURS.filter(c=>!currencies.find(cu=>cu.code===c));
+
+  /* ─── Shared style helpers ────────────────────────────────── */
+  const tblInp = (w=70) => ({
+    width:w, background:C.surface3, border:`1px solid ${C.border}`,
+    borderRadius:6, padding:"4px 7px", color:C.text,
+    fontSize:12, fontFamily:"monospace", outline:"none",
+  });
+  const pill = col => ({
+    fontSize:9,fontWeight:700,padding:"2px 6px",borderRadius:4,
+    background:`${col}20`,color:col,letterSpacing:"0.04em",
+  });
+
+  const TABS = [
+    {label:"Setup",         icon:"🔧"},
+    {label:"Points & FX",  icon:"⚡"},
+    {label:"Prize Pool",   icon:"🏆"},
+    {label:"Baseline KPIs",icon:"📊"},
+    {label:"Forecast",     icon:"📈"},
+  ];
+
+  /* ─── Render ──────────────────────────────────────────────── */
+  return (
+    <div style={{fontFamily:"Inter,system-ui,sans-serif",background:C.bg,minHeight:"100vh",color:C.text}}>
+
+      {/* ── HEADER ── */}
+      <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,
+        padding:"13px 24px",display:"flex",alignItems:"center",
+        justifyContent:"space-between",gap:16,flexWrap:"wrap"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:38,height:38,borderRadius:10,flexShrink:0,
+            background:`linear-gradient(135deg,${C.accent},${C.purple})`,
+            display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <TrophyIcon size={18} color="#fff"/>
+          </div>
+          <div>
+            <div style={{fontSize:14,fontWeight:700,fontFamily:"'Space Grotesk',sans-serif"}}>
+              {name || "Leaderboard Calculator"}
+            </div>
+            <div style={{fontSize:10,color:C.textSec,marginTop:1}}>
+              Promo ROI &amp; KPI Forecaster · Galaxsys
+            </div>
+          </div>
+        </div>
+        <div style={{display:"flex",gap:22,alignItems:"center",flexWrap:"wrap"}}>
+          {[
+            {label:"Prize Pool",    v:fmtE(prizeCalc.faceVal),    c:C.gold},
+            {label:"Est. Players",  v:fmt(Math.round(fc.prtPly)), c:C.text},
+            {label:"Incr. GGR",     v:fmtE(fc.incrGGR),          c:C.warning},
+            {label:"Galaxsys ROI",  v:pct(fc.roi),
+              c:fc.roi>=0 ? C.success : C.danger},
+          ].map(m=>(
+            <div key={m.label} style={{textAlign:"right"}}>
+              <div style={{fontSize:9,color:C.textMut,textTransform:"uppercase",letterSpacing:"0.06em"}}>{m.label}</div>
+              <div style={{fontSize:13,fontFamily:"monospace",fontWeight:700,color:m.c}}>{m.v}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── TAB NAV ── */}
+      <div style={{background:C.surface,borderBottom:`1px solid ${C.border}`,
+        padding:"0 24px",display:"flex",gap:2,overflowX:"auto"}}>
+        {TABS.map((t,i)=>(
+          <button key={i} onClick={()=>setTab(i)} style={{
+            display:"flex",alignItems:"center",gap:6,padding:"11px 15px",
+            background:"transparent",border:"none",
+            borderBottom:`2px solid ${tab===i ? C.accent : "transparent"}`,
+            color:tab===i ? C.accent : C.textSec,
+            cursor:"pointer",fontSize:11,fontWeight:600,
+            fontFamily:"Inter,sans-serif",transition:"color 0.15s",whiteSpace:"nowrap",
+          }}>
+            <span style={{fontSize:13}}>{t.icon}</span>{t.label}
+            {i===4 && (
+              <span style={{...pill(fc.roi>=0?C.success:C.danger),marginLeft:4}}>
+                {fc.roi>=0?"+":""}{pct(fc.roi,0)} ROI
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* ── CONTENT ── */}
+      <div style={{padding:"22px 24px",maxWidth:1160,margin:"0 auto"}}>
+
+        {/* ════ TAB 1: SETUP ════ */}
+        {tab===0 && (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <Card>
+              <SectionTitle>Tournament Configuration</SectionTitle>
+              <Inp label="Tournament Name" value={name} onChange={setName} type="text"/>
+              <Inp label="Duration" value={duration} onChange={setDuration}
+                suffix="days" min={1} max={90}
+                hint={`${duration} day${duration>1?"s":""} · ${duration*24} hours total`}/>
+
+              <Label>Scope Configuration</Label>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
+                {[
+                  {v:"single-single",l:"1 Partner, 1 Game"},
+                  {v:"single-multi", l:"1 Partner, Multi Games"},
+                  {v:"multi-single", l:"Multi Partners, 1 Game"},
+                  {v:"multi-multi",  l:"Multi Partners, Multi Games"},
+                ].map(o=>(
+                  <button key={o.v} onClick={()=>{
+                    setConfigType(o.v);
+                    if(o.v==="single-single"){setPartners(1);setGames(1);}
+                    if(o.v==="single-multi") setPartners(1);
+                    if(o.v==="multi-single") setGames(1);
+                  }} style={{
+                    padding:"10px 11px",borderRadius:8,textAlign:"left",
+                    border:`1px solid ${configType===o.v?C.accent:C.border}`,
+                    background:configType===o.v?C.accentDim:C.surface2,
+                    color:configType===o.v?C.accent:C.textSec,
+                    cursor:"pointer",fontSize:11,fontWeight:600,
+                    fontFamily:"Inter,sans-serif",transition:"all 0.15s",
+                  }}>{o.l}</button>
+                ))}
+              </div>
+
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                <Inp label="Partners" value={partners} onChange={setPartners}
+                  min={1} max={100}
+                  readonly={configType==="single-single"||configType==="single-multi"}
+                  hint={`${partners} casino partner${partners>1?"s":""}`}/>
+                <Inp label="Games" value={games} onChange={setGames}
+                  min={1} max={50}
+                  readonly={configType==="single-single"||configType==="multi-single"}
+                  hint={`${games} game title${games>1?"s":""}`}/>
+              </div>
+            </Card>
+
+            <div>
+              <Card style={{marginBottom:16}}>
+                <SectionTitle>Tournament Scope Summary</SectionTitle>
+                {[
+                  {l:"Configuration Type",     v:CONFIG_LABELS[configType]},
+                  {l:"Partner × Game Streams", v:`${partners} × ${games} = ${partners*games} streams`},
+                  {l:"Total Duration",         v:`${duration} days`},
+                  {l:"Prize Pool (Face Value)", v:fmtE(prizeCalc.faceVal), c:C.gold},
+                  {l:"Total Prize Winners",    v:`${prizeCalc.totalWinners} players`},
+                  {l:"Active Player Scope",    v:fmt(fc.totalPly)+" players/day"},
+                ].map(r=><RowKpi key={r.l} label={r.l} value={r.v} color={r.c}/>)}
+              </Card>
+
+              <div style={{background:C.accentDim,border:`1px solid ${C.accent}25`,
+                borderRadius:12,padding:"14px 16px",display:"flex",gap:10,alignItems:"flex-start"}}>
+                <div style={{flexShrink:0,marginTop:2}}>
+                  <InfoIcon size={14} color={C.accent}/>
+                </div>
+                <div style={{fontSize:12,color:C.textSec,lineHeight:1.65}}>
+                  <strong style={{color:C.accent}}>Multi-partner setup:</strong> All partners share
+                  the same prize pool but each gets independent per-currency configuration.
+                  Player scope scales by your partner × game multiplier from baseline daily stats.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ════ TAB 2: POINTS & FX ════ */}
+        {tab===1 && (
+          <div style={{display:"grid",gridTemplateColumns:"320px 1fr",gap:20}}>
+            <div>
+              <Card>
+                <SectionTitle>Default Eligibility Rules</SectionTitle>
+                <Inp label="Point Rate" value={eurPerPt} onChange={setEurPerPt}
+                  prefix="€" suffix="= 1 pt" min={0.01} step={0.01}
+                  hint="Amount in EUR that earns 1 leaderboard point"/>
+                <Inp label="Minimum Bet (EUR)" value={minBet} onChange={setMinBet}
+                  prefix="€" min={0.1} step={0.1}
+                  hint="Bets below this threshold earn 0 points"/>
+                <Inp label="Min. Cashout Multiplier" value={minMult} onChange={setMinMult}
+                  suffix="×" min={1} step={0.1}
+                  hint="Win multiplier required for bet to be eligible"/>
+                <div style={{marginTop:4,padding:"12px 14px",background:C.surface2,borderRadius:8,
+                  fontSize:12,color:C.textSec,lineHeight:1.75}}>
+                  <div style={{fontWeight:600,color:C.text,marginBottom:4}}>Example calculation</div>
+                  <div>Bet €{(minBet*2).toFixed(2)} · cashout ×{minMult}</div>
+                  <div style={{color:C.accent}}>→ {Math.floor((minBet*2)/eurPerPt)} pts earned</div>
+                  <div style={{fontSize:10,color:C.textMut,marginTop:3}}>
+                    €{(minBet*2).toFixed(2)} ÷ €{eurPerPt}/pt = {Math.floor((minBet*2)/eurPerPt)} pts
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            <Card>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                <SectionTitle>Per-Currency Configurations</SectionTitle>
+                <select onChange={e=>{if(e.target.value)addCur(e.target.value);e.target.value="";}}
+                  style={{background:C.surface3,border:`1px solid ${C.border}`,borderRadius:8,
+                    padding:"6px 10px",color:C.accent,fontSize:11,cursor:"pointer",outline:"none"}}>
+                  <option value="">+ Add Currency</option>
+                  {availCurs.map(c=><option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div style={{overflowX:"auto"}}>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                  <thead>
+                    <tr style={{borderBottom:`1px solid ${C.border}`}}>
+                      {["Currency","Prize Pool","Min. Bet","Points / 1 unit","FX vs EUR",""].map(h=>(
+                        <th key={h} style={{padding:"7px 10px",textAlign:"left",color:C.textSec,
+                          fontWeight:700,fontSize:9,textTransform:"uppercase",
+                          letterSpacing:"0.06em",whiteSpace:"nowrap"}}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currencies.map(cur=>(
+                      <tr key={cur.id} style={{borderBottom:`1px solid ${C.border}20`}}>
+                        <td style={{padding:"8px 10px"}}>
+                          <div style={{display:"flex",alignItems:"center",gap:7}}>
+                            <span style={{fontWeight:700,fontFamily:"monospace",fontSize:13,
+                              color:cur.code==="EUR"?C.gold:C.text}}>{cur.code}</span>
+                            {cur.code==="EUR" && <span style={pill(C.gold)}>BASE</span>}
+                          </div>
+                        </td>
+                        <td style={{padding:"6px 10px"}}>
+                          <NumInput value={cur.prizePool}
+                            onChange={v=>updCur(cur.id,"prizePool",v)}
+                            style={tblInp(90)}/>
+                        </td>
+                        <td style={{padding:"6px 10px"}}>
+                          <NumInput value={cur.minBet}
+                            onChange={v=>updCur(cur.id,"minBet",v)}
+                            style={tblInp(70)} step={0.01}/>
+                        </td>
+                        <td style={{padding:"6px 10px"}}>
+                          <NumInput value={cur.ptRate}
+                            onChange={v=>updCur(cur.id,"ptRate",v)}
+                            style={tblInp(70)}/>
+                        </td>
+                        <td style={{padding:"6px 10px"}}>
+                          <span style={{fontSize:12,color:C.textMut,fontFamily:"monospace"}}>
+                            {FX[cur.code]?`×${FX[cur.code]}`:"—"}
+                          </span>
+                        </td>
+                        <td style={{padding:"6px 10px"}}>
+                          {cur.code!=="EUR" && (
+                            <button onClick={()=>delCur(cur.id)}
+                              style={{background:"transparent",border:"none",cursor:"pointer",color:C.danger,padding:4}}>
+                              <TrashIcon size={13}/>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{marginTop:14,padding:"10px 14px",background:C.surface2,borderRadius:8,
+                fontSize:11,color:C.textMut,lineHeight:1.6}}>
+                Prize pools and min bets per currency can be set independently.
+                FX rates shown are reference only — adjust prize pools manually to reflect
+                market conditions or negotiated partner rates.
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* ════ TAB 3: PRIZE POOL ════ */}
+        {tab===2 && (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 300px",gap:20}}>
+            <div>
+              <Card>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+                  <SectionTitle>Prize Places</SectionTitle>
+                  <button onClick={addPrize} style={{
+                    display:"flex",alignItems:"center",gap:5,
+                    background:C.accentDim,border:`1px solid ${C.accent}30`,
+                    borderRadius:8,padding:"6px 12px",color:C.accent,
+                    cursor:"pointer",fontSize:11,fontWeight:600,
+                  }}>
+                    <PlusIcon size={12} color={C.accent}/> Add Prize Tier
+                  </button>
+                </div>
+                <div style={{overflowX:"auto"}}>
+                  <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
+                    <thead>
+                      <tr style={{borderBottom:`1px solid ${C.border}`}}>
+                        {["Place From","Place To","Prize Type","Prize Value","Cost (EUR)","Winners",""].map(h=>(
+                          <th key={h} style={{padding:"7px 9px",textAlign:"left",color:C.textSec,
+                            fontWeight:700,fontSize:9,textTransform:"uppercase",letterSpacing:"0.06em"}}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {prizes.map(p=>{
+                        const n  = Math.max(0, p.to-p.from+1);
+                        let fv=0, ac=0;
+                        if(p.type==="real_money")  {fv=n*p.amount; ac=fv;}
+                        if(p.type==="free_bets")   {fv=n*p.bc*p.ba; ac=fv*(freeBetCostPct/100);}
+                        if(p.type==="free_amount") {fv=n*p.amount; ac=fv;}
+                        const tc = p.type==="real_money"?C.gold : p.type==="free_bets"?C.purple : C.accent;
+                        return (
+                          <tr key={p.id} style={{borderBottom:`1px solid ${C.border}15`}}>
+                            <td style={{padding:"7px 9px"}}>
+                              <NumInput value={p.from}
+                                onChange={v=>updPrize(p.id,"from",v)}
+                                style={{...tblInp(58),textAlign:"center"}}/>
+                            </td>
+                            <td style={{padding:"7px 9px"}}>
+                              <NumInput value={p.to}
+                                onChange={v=>updPrize(p.id,"to",v)}
+                                style={{...tblInp(58),textAlign:"center"}}/>
+                            </td>
+                            <td style={{padding:"7px 9px"}}>
+                              <select value={p.type}
+                                onChange={e=>updPrize(p.id,"type",e.target.value)}
+                                style={{background:C.surface3,border:`1px solid ${tc}35`,
+                                  borderRadius:6,padding:"4px 8px",color:tc,
+                                  fontSize:11,fontWeight:700,outline:"none",cursor:"pointer"}}>
+                                <option value="real_money">Real Money</option>
+                                <option value="free_bets">Free Bets</option>
+                                <option value="free_amount">Free Amount</option>
+                              </select>
+                            </td>
+                            <td style={{padding:"7px 9px"}}>
+                              {p.type==="free_bets" ? (
+                                <div style={{display:"flex",alignItems:"center",gap:5}}>
+                                  <NumInput value={p.bc}
+                                    onChange={v=>updPrize(p.id,"bc",v)}
+                                    style={{...tblInp(46),textAlign:"center"}}/>
+                                  <span style={{color:C.textMut,fontSize:11}}>×</span>
+                                  <NumInput value={p.ba}
+                                    onChange={v=>updPrize(p.id,"ba",v)}
+                                    style={{...tblInp(46),textAlign:"center"}} step={0.1}/>
+                                  <span style={{color:C.textMut,fontSize:10}}>€</span>
+                                </div>
+                              ) : (
+                                <div style={{display:"flex",alignItems:"center",gap:5}}>
+                                  <span style={{color:C.textMut,fontSize:12}}>€</span>
+                                  <NumInput value={p.amount}
+                                    onChange={v=>updPrize(p.id,"amount",v)}
+                                    style={tblInp(80)} step={0.01}/>
+                                  <span style={{color:C.textMut,fontSize:10}}>/winner</span>
+                                </div>
+                              )}
+                            </td>
+                            <td style={{padding:"7px 9px"}}>
+                              <div style={{fontFamily:"monospace",fontSize:12,fontWeight:700,color:tc}}>
+                                {fmtE(fv)}
+                              </div>
+                              {p.type==="free_bets" && (
+                                <div style={{fontSize:9,color:C.textMut}}>
+                                  cost {fmtE(ac)} ({freeBetCostPct}%)
+                                </div>
+                              )}
+                            </td>
+                            <td style={{padding:"7px 9px"}}>
+                              <span style={{fontSize:12,color:C.textSec,fontFamily:"monospace"}}>{n}</span>
+                            </td>
+                            <td style={{padding:"7px 9px"}}>
+                              <button onClick={()=>delPrize(p.id)}
+                                style={{background:"transparent",border:"none",cursor:"pointer",
+                                  color:C.danger,padding:3}}>
+                                <TrashIcon size={13}/>
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            </div>
+
+            {/* Prize summary sidebar */}
+            <div style={{display:"flex",flexDirection:"column",gap:16}}>
+              <Card>
+                <SectionTitle>Prize Pool Summary</SectionTitle>
+                <RowKpi label="Total Face Value"  value={fmtE(prizeCalc.faceVal)}    color={C.gold}/>
+                <RowKpi label="Actual Cost"       value={fmtE(prizeCalc.actualCost)} color={C.warning}/>
+                <RowKpi label="Total Winners"     value={`${prizeCalc.totalWinners} players`}/>
+                <div style={{marginTop:16}}>
+                  <Label>Breakdown by Type</Label>
+                  {[
+                    {type:"real_money", label:"Real Money", color:C.gold},
+                    {type:"free_bets",  label:"Free Bets",  color:C.purple},
+                    {type:"free_amount",label:"Free Amount",color:C.accent},
+                  ].map(t=>{
+                    let total=0;
+                    prizes.filter(p=>p.type===t.type).forEach(p=>{
+                      const n2=Math.max(0,p.to-p.from+1);
+                      total += t.type==="free_bets" ? n2*p.bc*p.ba : n2*p.amount;
+                    });
+                    if(!total) return null;
+                    const share = prizeCalc.faceVal>0 ? total/prizeCalc.faceVal*100 : 0;
+                    return (
+                      <div key={t.type} style={{marginBottom:10}}>
+                        <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
+                          <span style={{fontSize:11,color:t.color,fontWeight:600}}>{t.label}</span>
+                          <span style={{fontSize:10,color:C.textSec,fontFamily:"monospace"}}>
+                            {fmtE(total)} · {pct(share,0)}
+                          </span>
+                        </div>
+                        <div style={{height:5,background:C.border,borderRadius:3,overflow:"hidden"}}>
+                          <div style={{height:"100%",width:`${share}%`,background:t.color,
+                            borderRadius:3,transition:"width 0.3s"}}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+
+              <Card>
+                <SectionTitle>Cost Settings</SectionTitle>
+                <Inp label="Free Bets Effective Cost"
+                  value={freeBetCostPct} onChange={setFreeBetCostPct}
+                  suffix="% of face value" min={1} max={100}
+                  hint="Net cost after house edge on free rounds"/>
+                <Inp label="Galaxsys Funds"
+                  value={galaxysFund} onChange={setGalaxysFund}
+                  suffix="% of cost" min={0} max={100} step={5}
+                  hint="Rest is covered by casino partners"/>
+                <div style={{marginTop:8,padding:"10px 12px",background:C.surface2,borderRadius:8}}>
+                  <RowKpi label="Galaxsys cost" value={fmtE(prizeCalc.galaxysCost)} color={C.danger}/>
+                  <RowKpi label="Partner cost"  value={fmtE(prizeCalc.partnerCost)} color={C.textSec}/>
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* ════ TAB 4: BASELINE ════ */}
+        {tab===3 && (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:20}}>
+            <div>
+              <Card style={{marginBottom:16}}>
+                <SectionTitle>Player &amp; Betting Baseline</SectionTitle>
+                <div style={{fontSize:11,color:C.textMut,lineHeight:1.65,marginBottom:14,
+                  padding:"9px 12px",background:C.surface2,borderRadius:8}}>
+                  Enter per-game per-partner daily averages. Forecast scales these
+                  across {partners} partner(s) × {games} game(s) = {partners*games} streams.
+                </div>
+                <Inp label="Daily Active Players (per game/partner)"
+                  value={dap} onChange={setDap} min={1}
+                  hint={`Total scope: ${fmt(fc.totalPly)} players/day`}/>
+                <Inp label="Avg Bet Count / Player / Leaderboard Period"
+                  value={avgBC} onChange={setAvgBC} min={1} step={1}
+                  hint={`Total bets per player across all ${duration} days of the tournament`}/>
+                <Inp label="Avg Bet Size"
+                  value={avgBS} onChange={setAvgBS} prefix="€" min={0.1} step={0.1}/>
+              </Card>
+              <Card>
+                <SectionTitle>Financial Parameters</SectionTitle>
+                <Inp label="Game GGR %"
+                  value={ggrPct} onChange={setGgrPct}
+                  suffix="% of bets" min={0.5} max={25} step={0.1}
+                  hint="Gross Gaming Revenue as % of total bet volume"/>
+                <Inp label="Galaxsys Revenue Share"
+                  value={revShare} onChange={setRevShare}
+                  suffix="% of GGR" min={1} max={50} step={0.5}
+                  hint="Galaxsys's share of casino GGR"/>
+              </Card>
+            </div>
+
+            <Card>
+              <SectionTitle>Baseline Period KPIs ({duration}-Day Tournament)</SectionTitle>
+              {[
+                {l:"Total Players in Scope",           v:fmt(fc.totalPly),               c:C.text},
+                {l:"Avg Bet Count / Player",            v:fmt(fc.baseBC,0)+" bets total", c:C.text},
+                {l:"Avg Bet Size",                      v:fmtE(fc.baseBS,2),             c:C.text},
+                {l:"Avg Total Bet Amt / Player",        v:fmtE(fc.baseBAmtP,2),          c:C.text},
+                {l:"Total Bet Count",                   v:fmt(fc.baseTBC,0),             c:C.text},
+                {l:"Total Bet Amount",                  v:fmtE(fc.baseTBA,0),            c:C.text},
+                {l:`Total GGR (${ggrPct}%)`,            v:fmtE(fc.baseGGR,0),           c:C.warning},
+                {l:`Galaxsys Revenue (${revShare}%)`,   v:fmtE(fc.baseGRev,0),          c:C.accent},
+              ].map(r=><RowKpi key={r.l} label={r.l} value={r.v} color={r.c}/>)}
+              <div style={{marginTop:14,padding:"12px 14px",background:C.accentDim,borderRadius:9,
+                border:`1px solid ${C.accent}20`,fontSize:11,color:C.textSec,lineHeight:1.65}}>
+                <strong style={{color:C.accent}}>These are your pre-promo benchmarks.</strong>{" "}
+                The Forecast tab shows how the Leaderboard promo lifts each KPI and whether
+                the incremental revenue justifies the prize pool investment.
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* ════ TAB 5: FORECAST ════ */}
+        {tab===4 && (
+          <div>
+            {/* Uplift sliders */}
+            <Card style={{marginBottom:20}}>
+              <SectionTitle>Uplift Assumptions (Participating Players Only)</SectionTitle>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:28}}>
+                <SliderInput label="Participation Rate"  value={partRate} onChange={setPartRate} min={1} max={80}/>
+                <SliderInput label="Bet Count Uplift"    value={bcUplift} onChange={setBcUplift} min={0} max={100}/>
+                <SliderInput label="Avg Bet Size Uplift" value={bsUplift} onChange={setBsUplift} min={0} max={100}/>
+              </div>
+              <div style={{fontSize:10,color:C.textMut,marginTop:2}}>
+                {fmt(Math.round(fc.prtPly))} participating players (out of {fmt(fc.totalPly)} total)
+                increase both bet count and size. Non-participants maintain baseline behavior.
+              </div>
+            </Card>
+
+            {/* KPI comparison grid */}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
+              <KpiCompare label="Total Players"
+                before={fc.totalPly}    after={fc.totalPly}
+                formatFn={v=>fmt(v,0)}        color={C.accent}/>
+              <KpiCompare label="Avg Bet Count / Player"
+                before={fc.baseBC}      after={fc.newBCperPly}
+                formatFn={v=>fmt(v,1)+" bets"} color={C.purple}/>
+              <KpiCompare label="Avg Bet Size"
+                before={fc.baseBS}      after={fc.newBSavg}
+                formatFn={v=>fmtE(v,2)} color={C.gold}/>
+              <KpiCompare label="Avg Total Bet Amt / Player"
+                before={fc.baseBAmtP}   after={fc.newBAperPly}
+                formatFn={v=>fmtE(v,2)} color={C.accent}/>
+              <KpiCompare label="Total Bet Amount"
+                before={fc.baseTBA}     after={fc.newTBA}
+                formatFn={v=>fmtE(v,0)} color={C.purple}/>
+              <KpiCompare label="Total GGR"
+                before={fc.baseGGR}     after={fc.newGGR}
+                formatFn={v=>fmtE(v,0)} color={C.gold}/>
+            </div>
+
+            {/* Chart + P&L */}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 310px",gap:20}}>
+              <Card>
+                <SectionTitle>KPI Uplift vs Baseline</SectionTitle>
+                <UpliftChart items={[
+                  {label:"Avg Bet Count/Player",
+                    uplift: fc.baseBC>0 ? (fc.newBCperPly/fc.baseBC-1)*100 : 0,
+                    before: fmt(fc.baseBC,1), after: fmt(fc.newBCperPly,1)},
+                  {label:"Avg Bet Size",
+                    uplift: fc.baseBS>0 ? (fc.newBSavg/fc.baseBS-1)*100 : 0,
+                    before: fmtE(fc.baseBS,2), after: fmtE(fc.newBSavg,2)},
+                  {label:"Avg Bet Amt/Player",
+                    uplift: fc.baseBAmtP>0 ? (fc.newBAperPly/fc.baseBAmtP-1)*100 : 0,
+                    before: fmtE(fc.baseBAmtP,0), after: fmtE(fc.newBAperPly,0)},
+                  {label:"Total Bet Count",
+                    uplift: fc.baseTBC>0 ? (fc.newTBC/fc.baseTBC-1)*100 : 0,
+                    before: fmt(fc.baseTBC,0), after: fmt(fc.newTBC,0)},
+                  {label:"Total Bet Amount",
+                    uplift: fc.baseTBA>0 ? (fc.newTBA/fc.baseTBA-1)*100 : 0,
+                    before: fmtE(fc.baseTBA,0), after: fmtE(fc.newTBA,0)},
+                  {label:"Total GGR",
+                    uplift: fc.baseGGR>0 ? (fc.newGGR/fc.baseGGR-1)*100 : 0,
+                    before: fmtE(fc.baseGGR,0), after: fmtE(fc.newGGR,0)},
+                  {label:"Galaxsys Revenue",
+                    uplift: fc.baseGRev>0 ? (fc.newGRev/fc.baseGRev-1)*100 : 0,
+                    before: fmtE(fc.baseGRev,0), after: fmtE(fc.newGRev,0)},
+                ]}/>
+              </Card>
+
+              {/* P&L Card */}
+              <Card>
+                <SectionTitle>Galaxsys P&amp;L</SectionTitle>
+                {[
+                  {l:"Incremental GGR",               v:fmtE(fc.incrGGR,0),    c:C.warning},
+                  {l:`Galaxsys Share (${revShare}%)`, v:fmtE(fc.incrGRev,0),   c:C.accent},
+                  {l:"Galaxsys Prize Cost",           v:`−${fmtE(prizeCalc.galaxysCost,0)}`,c:C.danger},
+                  {l:"Net Gain",                      v:fmtE(fc.netGalaxys,0), c:fc.netGalaxys>=0?C.success:C.danger},
+                ].map(r=><RowKpi key={r.l} label={r.l} value={r.v} color={r.c}/>)}
+
+                {/* ROI */}
+                <div style={{marginTop:16,padding:16,textAlign:"center",
+                  background:fc.roi>=0?C.accentDim:"rgba(255,90,90,0.09)",
+                  border:`1px solid ${fc.roi>=0?C.accent:C.danger}30`,borderRadius:10}}>
+                  <div style={{fontSize:9,color:C.textSec,textTransform:"uppercase",
+                    letterSpacing:"0.1em",marginBottom:5}}>Return on Investment</div>
+                  <div style={{fontSize:38,fontFamily:"'Space Grotesk',sans-serif",
+                    fontWeight:700,lineHeight:1,color:fc.roi>=0?C.accent:C.danger}}>
+                    {fc.roi>=0?"+":""}{pct(fc.roi,1)}
+                  </div>
+                  <div style={{fontSize:10,color:C.textMut,marginTop:5}}>Net Gain ÷ Galaxsys Prize Cost</div>
+                </div>
+
+                {/* Break-even */}
+                {fc.beRate!=null && (
+                  <div style={{marginTop:12,padding:"11px 13px",background:C.surface2,borderRadius:9}}>
+                    <div style={{fontSize:9,color:C.textSec,textTransform:"uppercase",
+                      letterSpacing:"0.07em",marginBottom:5}}>Break-even Participation</div>
+                    <div style={{fontSize:20,fontFamily:"monospace",fontWeight:700,
+                      color:fc.beRate<=partRate?C.success:C.warning}}>
+                      {pct(fc.beRate,1)}
+                    </div>
+                    <div style={{fontSize:10,color:C.textMut,marginTop:3}}>
+                      {fc.beRate<=partRate
+                        ? `✓ Your ${partRate}% assumption beats break-even`
+                        : `Need ${pct(fc.beRate-partRate,1)} more participation to break even`}
+                    </div>
+                    <div style={{marginTop:8,height:5,background:C.border,borderRadius:3,overflow:"hidden"}}>
+                      <div style={{height:"100%",
+                        width:`${fc.beRate>0 ? Math.min(partRate/fc.beRate*100,100) : 100}%`,
+                        background:fc.beRate<=partRate?C.success:C.warning,
+                        borderRadius:3,transition:"width 0.3s"}}/>
+                    </div>
+                    <div style={{display:"flex",justifyContent:"space-between",
+                      marginTop:3,fontSize:9,color:C.textMut}}>
+                      <span>Current: {partRate}%</span>
+                      <span>B/E: {pct(fc.beRate,1)}</span>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<LeaderboardCalculator/>);
+</script>
+</body>
+</html>
