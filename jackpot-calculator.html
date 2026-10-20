@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jackpot Business Case Calculator</title>
+<style>
+  :root{
+    --navy:#051435;
+    --navy-soft:#0c1f4d;
+    --orange:#EA8A1E;
+    --blue:#0068FF;
+    --blue-light:#3BA2E7;
+    --panel:#EBF3FF;
+    --bg:#F4F7FC;
+    --white:#FFFFFF;
+    --line:#DCE6F5;
+    --text:#0F1B33;
+    --text-soft:#5B6B87;
+    --danger:#D6455D;
+    --ok:#1C9A6C;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.45;
+  }
+  .app{max-width:1320px;margin:0 auto;padding:0 24px 60px;}
+
+  header.top{
+    background:linear-gradient(135deg,var(--navy) 0%, var(--navy-soft) 100%);
+    color:var(--white);
+    padding:60px 24px 30px;
+    margin-bottom:28px;
+  }
+  header.top .inner{max-width:1320px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+  header.top h1{margin:0;font-size:23px;font-weight:650;letter-spacing:-0.01em;}
+  header.top p{margin:6px 0 0;color:#B9C6E6;font-size:14px;max-width:620px;}
+  .badge{
+    background:rgba(234,138,30,0.16);
+    border:1px solid rgba(234,138,30,0.5);
+    color:var(--orange);
+    font-size:12.5px;
+    font-weight:600;
+    padding:6px 12px;
+    border-radius:100px;
+    white-space:nowrap;
+  }
+
+  .tabs{display:flex;gap:0;margin-bottom:22px;border-bottom:1px solid var(--line);}
+  .tab-btn{
+    padding:12px 4px;margin-right:28px;border:none;background:none;font-family:inherit;
+    font-size:14.5px;font-weight:700;color:var(--text-soft);cursor:pointer;
+    border-bottom:2px solid transparent;margin-bottom:-1px;
+  }
+  .tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .layout{
+    display:grid;
+    grid-template-columns:400px 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width:940px){
+    .layout{grid-template-columns:1fr;}
+  }
+
+  .card{
+    background:var(--white);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px;
+  }
+  .card + .card{margin-top:18px;}
+
+  .card h2{
+    font-size:14px;
+    font-weight:700;
+    text-transform:none;
+    margin:0 0 16px;
+    color:var(--navy);
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .card h2 .num{
+    width:20px;height:20px;border-radius:5px;
+    background:var(--panel);color:var(--blue);
+    font-size:12px;display:inline-flex;align-items:center;justify-content:center;
+    font-weight:700;
+  }
+
+  .field{margin-bottom:16px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{
+    display:block;font-size:12.5px;font-weight:600;color:var(--text-soft);
+    margin-bottom:6px;
+  }
+  .field .hint{font-size:11.5px;color:var(--text-soft);margin-top:5px;}
+  .field-error-msg{font-size:11.5px;color:var(--danger);margin-top:6px;display:none;}
+  .field-error-msg.show{display:block;}
+  input.input-error, select.input-error{
+    border-color:var(--danger)!important;
+    box-shadow:0 0 0 3px rgba(214,69,93,0.12);
+  }
+  .level-error-msg{font-size:11.5px;color:var(--danger);margin-top:10px;display:none;}
+  .level-error-msg.show{display:block;}
+  input[type=number], input[type=text], select{
+    width:100%;
+    padding:9px 11px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    font-size:14px;
+    color:var(--text);
+    background:var(--white);
+    font-family:inherit;
+  }
+  input:focus, select:focus{
+    outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,104,255,0.12);
+  }
+
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+  .seg{
+    display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+  }
+  .seg button{
+    flex:1;padding:9px 8px;border:none;background:var(--white);color:var(--text-soft);
+    font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;
+  }
+  .seg button + button{border-left:1px solid var(--line);}
+  .seg button.active{background:var(--blue);color:#fff;}
+
+  .stepper{display:flex;align-items:center;gap:10px;}
+  .stepper button{
+    width:32px;height:32px;border-radius:7px;border:1px solid var(--line);
+    background:var(--white);font-size:16px;color:var(--blue);cursor:pointer;font-weight:700;
+  }
+  .stepper button:disabled{opacity:0.35;cursor:not-allowed;}
+  .stepper .val{font-size:15px;font-weight:700;min-width:16px;text-align:center;}
+  .stepper .levels-preview{font-size:12.5px;color:var(--text-soft);margin-left:4px;}
+
+  .level-block{
+    border:1px solid var(--line);border-radius:8px;padding:13px 14px;margin-bottom:10px;
+    background:#FBFDFF;
+  }
+  .level-block:last-child{margin-bottom:0;}
+  .level-block .lname{
+    display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;
+  }
+  .level-block .lname .tag{
+    display:flex;align-items:center;gap:8px;font-weight:700;font-size:13.5px;color:var(--navy);
+  }
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .level-block .pctwrap{display:flex;align-items:center;gap:6px;}
+  .level-block .pctwrap input{width:64px;text-align:right;padding:6px 8px;}
+  .level-block .pctwrap span{font-size:13px;color:var(--text-soft);}
+
+  .splitcheck{
+    font-size:12px;padding:8px 10px;border-radius:6px;margin-top:10px;
+    display:flex;justify-content:space-between;
+  }
+  .splitcheck.ok{background:rgba(28,154,108,0.09);color:var(--ok);}
+  .splitcheck.bad{background:rgba(214,69,93,0.09);color:var(--danger);}
+
+  .btn-primary{
+    width:100%;padding:12px;border:none;border-radius:8px;
+    background:var(--blue);color:#fff;font-size:14.5px;font-weight:700;
+    cursor:pointer;font-family:inherit;margin-top:4px;
+  }
+  .btn-primary:hover{background:#0057D6;}
+
+  /* RESULTS */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;}
+  @media (max-width:800px){.kpis{grid-template-columns:repeat(2,1fr);}}
+  .kpi{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 16px;
+  }
+  .kpi .label{font-size:12px;color:var(--text-soft);font-weight:600;margin-bottom:6px;}
+  .kpi .value{font-size:22px;font-weight:750;color:var(--navy);letter-spacing:-0.01em;}
+  .kpi .value.orange{color:var(--orange);}
+  .kpi .value.blue{color:var(--blue);}
+  .kpi .sub{font-size:11.5px;color:var(--text-soft);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px;}
+  th{
+    text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;
+    color:var(--text-soft);padding:9px 10px;border-bottom:2px solid var(--line);font-weight:700;
+  }
+  td{padding:11px 10px;border-bottom:1px solid var(--line);color:var(--text);}
+  tr:last-child td{border-bottom:none;}
+  td.lvl{display:flex;align-items:center;gap:8px;font-weight:650;}
+  .num-cell{text-align:right;font-variant-numeric:tabular-nums;}
+
+  .chart-wrap{margin-top:18px;}
+  .bar-chart{
+    display:flex;align-items:flex-end;gap:18px;height:190px;
+    padding:0 6px 0;border-bottom:1px solid var(--line);
+  }
+  .bar-chart .col{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;
+  }
+  .bar-chart .bar-value{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:6px;white-space:nowrap;}
+  .bar-chart .bar{
+    width:100%;max-width:64px;border-radius:6px 6px 0 0;
+    transition:height 0.35s ease;
+  }
+  .bar-chart-labels{display:flex;gap:18px;padding:0 6px;margin-top:8px;}
+  .bar-chart-labels .col{flex:1;text-align:center;font-size:12px;font-weight:650;color:var(--text-soft);}
+
+  .empty{
+    text-align:center;padding:70px 20px;color:var(--text-soft);
+  }
+  .empty .icon{font-size:34px;margin-bottom:10px;}
+  .empty h3{color:var(--navy);margin:0 0 6px;font-size:16px;}
+  .empty p{margin:0;font-size:13.5px;max-width:340px;margin:0 auto;}
+
+  .note{
+    font-size:12.5px;color:var(--text-soft);background:var(--panel);
+    border-radius:7px;padding:11px 13px;margin-top:16px;
+  }
+  .note b{color:var(--navy);}
+
+  .callout{
+    font-size:12.5px;color:var(--text-soft);background:#FFF6E9;
+    border:1px solid rgba(234,138,30,0.35);
+    border-radius:7px;padding:11px 13px;margin-top:14px;
+  }
+  .callout b{color:var(--orange);}
+
+  .uplift-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px;}
+  @media (max-width:800px){.uplift-grid{grid-template-columns:1fr 1fr;}}
+
+  .section-title{font-size:14px;font-weight:700;color:var(--navy);margin:26px 0 12px;}
+  .section-title:first-child{margin-top:0;}
+  @media print{.hub-back{display:none !important;}}
+</style>
+</head>
+<body>
+<a href="index.html" class="hub-back" style="
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  color: #6b7280;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 20px;
+  padding: 6px 14px 6px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: color 0.2s, box-shadow 0.2s;
+" onmouseover="this.style.color='#111827';this.style.boxShadow='0 4px 16px rgba(0,0,0,0.14)'"
+   onmouseout="this.style.color='#6b7280';this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
+  &#8592; Hub
+</a>
+
+<header class="top">
+  <div class="inner">
+    <div>
+      <h1>Jackpot Business Case Calculator</h1>
+      <p>Model the funding cost and GGR impact of a Pot-driven or Time-driven jackpot across up to four levels — or forecast recommended level limits and partner impact directly from projected bet volume, GGR and player count.</p>
+    </div>
+    <span class="badge">Galaxsys · Internal Tool</span>
+  </div>
+</header>
+
+<div class="app">
+
+  <div class="tabs" id="mainTabs">
+    <button class="tab-btn active" data-tab="config">Configuration Calculator</button>
+    <button class="tab-btn" data-tab="forecast">Volume-Based Recommendation</button>
+  </div>
+
+  <!-- ================= TAB 1: CONFIGURATION CALCULATOR ================= -->
+  <div id="panel-config" class="tab-panel active">
+    <div class="layout">
+
+      <!-- INPUTS -->
+      <div>
+        <div class="card">
+          <h2><span class="num">1</span>Jackpot type</h2>
+          <div class="field">
+            <div class="seg" id="typeSeg">
+              <button data-type="pot" class="active">Pot-driven</button>
+              <button data-type="time">Time-driven</button>
+            </div>
+            <div class="hint" id="typeHint">Wins when the accumulated pot falls inside a set burst range.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><span class="num">2</span>Bet volume</h2>
+          <div class="field">
+            <label for="betAmount">Total bet amount (all games)</label>
+            <div class="row2">
+              <input type="text" inputmode="decimal" id="betAmount" placeholder="e.g. 15 000 000">
+              <div class="seg" id="periodSeg">
+                <button data-period="daily">Daily</button>
+                <button data-period="monthly" class="active">Monthly</button>
+              </div>
+            </div>
+            <div class="field-error-msg" id="betAmountError">Enter the total bet amount.</div>
+          </div>
+          <div class="field">
+            <label for="avgGGR">Average monthly GGR</label>
+            <input type="text" inputmode="decimal" id="avgGGR" placeholder="e.g. 300 000">
+            <div class="field-error-msg" id="avgGGRError">Enter the average monthly GGR.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><span class="num">3</span>Levels</h2>
+          <div class="field">
+            <label>Levels count</label>
+            <div class="stepper">
+              <button id="lvlMinus">−</button>
+              <span class="val" id="lvlCount">1</span>
+              <button id="lvlPlus">+</button>
+              <span class="levels-preview" id="lvlPreview">Mini</span>
+            </div>
+          </div>
+          <div id="levelBlocks"></div>
+          <div class="splitcheck ok" id="splitCheck">Total contribution: 0%</div>
+        </div>
+
+        <button class="btn-primary" id="calcBtn">Calculate impact</button>
+      </div>
+
+      <!-- RESULTS -->
+      <div>
+        <div id="resultsEmpty" class="card empty">
+          <div class="icon">🎰</div>
+          <h3>No results yet</h3>
+          <p>Fill in the bet volume, contribution rate and level details on the left, then hit Calculate impact.</p>
+        </div>
+
+        <div id="resultsContent" style="display:none;">
+          <div class="kpis">
+            <div class="kpi">
+              <div class="label">Total monthly jackpot cost</div>
+              <div class="value" id="kpiCost">–</div>
+              <div class="sub" id="kpiCostSub">&nbsp;</div>
+            </div>
+            <div class="kpi">
+              <div class="label">GGR impact</div>
+              <div class="value orange" id="kpiImpact">–</div>
+              <div class="sub" id="kpiImpactSub">&nbsp;</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Net GGR after jackpot</div>
+              <div class="value" id="kpiNet">–</div>
+              <div class="sub">&nbsp;</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Est. wins / month (all levels)</div>
+              <div class="value blue" id="kpiWins">–</div>
+              <div class="sub">&nbsp;</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin-bottom:14px;">Level breakdown</h2>
+            <div style="overflow-x:auto;">
+              <table id="resultsTable">
+                <thead>
+                  <tr>
+                    <th>Level</th>
+                    <th class="num-cell">Contribution</th>
+                    <th class="num-cell">Min eligible bet</th>
+                    <th class="num-cell">Monthly funding</th>
+                    <th class="num-cell">Avg. payout</th>
+                    <th class="num-cell">Est. wins / mo</th>
+                    <th class="num-cell" id="lastColHead">Days between wins</th>
+                  </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+              </table>
+            </div>
+            <div class="chart-wrap">
+              <div class="bar-chart" id="barChart"></div>
+              <div class="bar-chart-labels" id="barChartLabels"></div>
+            </div>
+          </div>
+
+          <div class="note" id="modelNote"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= TAB 2: VOLUME-BASED RECOMMENDATION ================= -->
+  <div id="panel-forecast" class="tab-panel">
+    <div class="layout">
+
+      <!-- INPUTS -->
+      <div>
+        <div class="card">
+          <h2><span class="num">1</span>Forecasted monthly volume</h2>
+          <div class="field">
+            <label for="fBetAmount">Total bet amount / month (forecast)</label>
+            <input type="text" inputmode="decimal" id="fBetAmount" placeholder="e.g. 18 000 000">
+            <div class="field-error-msg" id="fBetAmountError">Enter the forecasted total bet amount.</div>
+          </div>
+          <div class="field">
+            <label for="fGGR">Total GGR / month (forecast)</label>
+            <input type="text" inputmode="decimal" id="fGGR" placeholder="e.g. 900 000">
+            <div class="field-error-msg" id="fGGRError">Enter the forecasted total GGR.</div>
+          </div>
+          <div class="field">
+            <label for="fPlayers">Total player count / month (forecast)</label>
+            <input type="text" inputmode="decimal" id="fPlayers" placeholder="e.g. 12 000">
+            <div class="field-error-msg" id="fPlayersError">Enter the forecasted player count.</div>
+          </div>
+          <div class="field">
+            <label for="fAvgBets">Avg. bet count per player / month <span style="font-weight:400;color:var(--text-soft);">(optional, recommended)</span></label>
+            <input type="text" inputmode="decimal" id="fAvgBets" placeholder="e.g. 45">
+            <div class="hint">Used to derive the average single-bet size, which sharpens the min-eligible-bet suggestions below. Left blank, those suggestions are shown as "–".</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><span class="num">2</span>Jackpot type</h2>
+          <div class="field">
+            <div class="seg" id="fTypeSeg">
+              <button data-type="pot" class="active">Pot-driven</button>
+              <button data-type="time">Time-driven</button>
+            </div>
+            <div class="hint" id="fTypeHint">Recommends a min–max burst range per level from the funding it would receive.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2><span class="num">3</span>Levels & funding target</h2>
+          <div class="field">
+            <label>Levels count</label>
+            <div class="stepper">
+              <button id="fLvlMinus">−</button>
+              <span class="val" id="fLvlCount">3</span>
+              <button id="fLvlPlus">+</button>
+              <span class="levels-preview" id="fLvlPreview"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="fTargetPct">Target jackpot cost (% of forecasted GGR)</label>
+            <input type="number" min="0" step="0.1" id="fTargetPct" value="3">
+            <div class="hint">Typical live jackpot deployments run roughly 1–5% of GGR. This sets the total monthly funding budget, split across levels below.</div>
+          </div>
+          <div id="fLevelBlocks"></div>
+          <div class="splitcheck ok" id="fWeightCheck">Budget shares are automatically normalized to 100%.</div>
+        </div>
+
+        <div class="card">
+          <h2><span class="num">4</span>Engagement uplift assumptions <span style="font-weight:400;color:var(--text-soft);font-size:12px;">(optional)</span></h2>
+          <div class="field">
+            <label for="fUpliftBetSize">Avg. bet amount per player — expected uplift (%)</label>
+            <input type="number" step="0.1" id="fUpliftBetSize" value="0">
+          </div>
+          <div class="field">
+            <label for="fUpliftBetCount">Avg. bet count per player — expected uplift (%)</label>
+            <input type="number" step="0.1" id="fUpliftBetCount" value="0">
+          </div>
+          <div class="field">
+            <label for="fUpliftPlayers">Player count / retention — expected uplift (%)</label>
+            <input type="number" step="0.1" id="fUpliftPlayers" value="0">
+            <div class="hint">Leave at 0% if you don't yet have a benchmark. Base these on results from similar promo tools live with other partners, or the partner's own history with past promotions — the projection below is only as good as these assumptions.</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" id="fCalcBtn">Generate recommendation</button>
+      </div>
+
+      <!-- RESULTS -->
+      <div>
+        <div id="fResultsEmpty" class="card empty">
+          <div class="icon">📊</div>
+          <h3>No recommendation yet</h3>
+          <p>Fill in the forecasted volume and funding target on the left, then hit Generate recommendation.</p>
+        </div>
+
+        <div id="fResultsContent" style="display:none;">
+          <div class="kpis">
+            <div class="kpi">
+              <div class="label">Recommended monthly jackpot cost</div>
+              <div class="value" id="fKpiCost">–</div>
+              <div class="sub" id="fKpiCostSub">&nbsp;</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Implied contribution rate</div>
+              <div class="value orange" id="fKpiImpact">–</div>
+              <div class="sub" id="fKpiImpactSub">&nbsp;</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Net GGR after jackpot</div>
+              <div class="value" id="fKpiNet">–</div>
+              <div class="sub">&nbsp;</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Players reached / month (est.)</div>
+              <div class="value blue" id="fKpiWins">–</div>
+              <div class="sub" id="fKpiReachSub">&nbsp;</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin-bottom:14px;">Derived player metrics</h2>
+            <div class="uplift-grid">
+              <div class="kpi">
+                <div class="label">Avg. bet amount / player / month</div>
+                <div class="value" id="fDerivedBetPerPlayer">–</div>
+                <div class="sub">Total bet amount ÷ player count</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Avg. GGR / player / month</div>
+                <div class="value" id="fDerivedGGRPerPlayer">–</div>
+                <div class="sub">Total GGR ÷ player count</div>
+              </div>
+              <div class="kpi">
+                <div class="label">Avg. single bet size</div>
+                <div class="value" id="fDerivedBetSize">–</div>
+                <div class="sub" id="fDerivedBetSizeSub">&nbsp;</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin-bottom:14px;">Recommended level limits</h2>
+            <div style="overflow-x:auto;">
+              <table id="fResultsTable">
+                <thead>
+                  <tr>
+                    <th>Level</th>
+                    <th class="num-cell">Contribution</th>
+                    <th class="num-cell">Min–max burst</th>
+                    <th class="num-cell">Suggested min eligible bet</th>
+                    <th class="num-cell">Monthly funding</th>
+                    <th class="num-cell">Avg. payout</th>
+                    <th class="num-cell">Est. wins / mo</th>
+                    <th class="num-cell" id="fLastColHead">Days between wins</th>
+                  </tr>
+                </thead>
+                <tbody id="fResultsBody"></tbody>
+              </table>
+            </div>
+            <div class="chart-wrap">
+              <div class="bar-chart" id="fBarChart"></div>
+              <div class="bar-chart-labels" id="fBarChartLabels"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2 style="margin-bottom:14px;">Projected economic impact for the partner</h2>
+            <div class="uplift-grid">
+              <div class="kpi"><div class="label">Baseline GGR / month</div><div class="value" id="fUpBaseGGR">–</div></div>
+              <div class="kpi"><div class="label">Projected GGR / month</div><div class="value" id="fUpNewGGR">–</div></div>
+              <div class="kpi"><div class="label">Incremental GGR / month</div><div class="value blue" id="fUpIncGGR">–</div></div>
+              <div class="kpi"><div class="label">Jackpot cost / month</div><div class="value orange" id="fUpCost">–</div></div>
+              <div class="kpi"><div class="label">Net impact / month</div><div class="value" id="fUpNet">–</div></div>
+              <div class="kpi"><div class="label">ROI (incremental GGR ÷ cost)</div><div class="value" id="fUpROI">–</div></div>
+            </div>
+            <div class="callout" id="fUpliftNote"></div>
+          </div>
+
+          <div class="note" id="fModelNote"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const LEVELS = [
+  {key:'mini',  name:'Mini',  color:'#3BA2E7'},
+  {key:'major', name:'Major', color:'#0068FF'},
+  {key:'mega',  name:'Mega',  color:'#EA8A1E'},
+  {key:'grand', name:'Grand', color:'#051435'},
+];
+const FREQ_DAYS = {
+  daily:1, weekly:7, biweekly:14, monthly:30, quarterly:91, semesterly:182
+};
+const FREQ_LABEL = {
+  daily:'Daily', weekly:'Weekly', biweekly:'Bi-weekly', monthly:'Monthly', quarterly:'Quarterly', semesterly:'Semesterly'
+};
+
+let state = {
+  type:'pot',
+  period:'monthly',
+  levelCount:1,
+  levelData:{} // key -> {pct, minBurst, maxBurst, freq}
+};
+
+function initLevelData(){
+  LEVELS.forEach((l,i)=>{
+    state.levelData[l.key] = state.levelData[l.key] || {
+      pct: '', minBurst:'', maxBurst:'', freq:'weekly', minEligibleBet:''
+    };
+  });
+}
+function activeLevels(){ return LEVELS.slice(0, state.levelCount); }
+
+function groupThousands(intStr){
+  return intStr.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+function stripSpaces(s){
+  return (s===null||s===undefined) ? '' : String(s).replace(/\s/g,'');
+}
+
+function fmtMoney(n){
+  if (!isFinite(n)) return '–';
+  const sign = n < 0 ? '-' : '';
+  return '€' + sign + groupThousands(String(Math.round(Math.abs(n))));
+}
+function fmtMoney2(n){
+  if (!isFinite(n)) return '–';
+  const sign = n < 0 ? '-' : '';
+  const [intPart, decPart] = Math.abs(n).toFixed(2).split('.');
+  return '€' + sign + groupThousands(intPart) + '.' + decPart;
+}
+function fmtNum(n, d=1){
+  if (!isFinite(n)) return '–';
+  const rounded = Number(n.toFixed(d));
+  const sign = rounded < 0 ? '-' : '';
+  const parts = Math.abs(rounded).toString().split('.');
+  parts[0] = groupThousands(parts[0]);
+  return sign + parts.join('.');
+}
+
+// Live space-grouped formatting for currency text inputs
+function formatMoneyLive(raw){
+  let cleaned = raw.replace(/[^\d.]/g,'');
+  const firstDot = cleaned.indexOf('.');
+  if (firstDot !== -1){
+    cleaned = cleaned.slice(0,firstDot+1) + cleaned.slice(firstDot+1).replace(/\./g,'');
+  }
+  let [intPart, decPart] = cleaned.split('.');
+  intPart = (intPart || '').replace(/^0+(?=\d)/,'');
+  const grouped = groupThousands(intPart);
+  return decPart !== undefined ? grouped + '.' + decPart : grouped;
+}
+// Maps a caret position in the pre-format value to the equivalent position
+// in the post-format value, counting only non-space (content) characters,
+// so the caret stays where the user was typing instead of jumping to the end.
+function caretPosAfterFormat(oldValue, oldCaret, newValue){
+  let contentBeforeCaret = 0;
+  for (let i=0; i<oldCaret; i++){
+    if (oldValue[i] !== ' ') contentBeforeCaret++;
+  }
+  let count = 0;
+  for (let i=0; i<newValue.length; i++){
+    if (count === contentBeforeCaret) return i;
+    if (newValue[i] !== ' ') count++;
+  }
+  return newValue.length;
+}
+function formatMoneyInputWithCaret(el){
+  const oldValue = el.value;
+  const oldCaret = el.selectionStart === null ? oldValue.length : el.selectionStart;
+  const formatted = formatMoneyLive(oldValue);
+  if (formatted !== oldValue){
+    const newCaret = caretPosAfterFormat(oldValue, oldCaret, formatted);
+    el.value = formatted;
+    try { el.setSelectionRange(newCaret, newCaret); } catch(e){}
+  }
+  return formatted;
+}
+function attachMoneyFormatting(el){
+  el.addEventListener('input', ()=>{
+    formatMoneyInputWithCaret(el);
+  });
+}
+
+// =====================================================================
+// TAB SWITCHING
+// =====================================================================
+document.getElementById('mainTabs').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  const tab = b.dataset.tab;
+  document.querySelectorAll('#mainTabs .tab-btn').forEach(x=>x.classList.toggle('active', x===b));
+  document.getElementById('panel-config').classList.toggle('active', tab==='config');
+  document.getElementById('panel-forecast').classList.toggle('active', tab==='forecast');
+});
+
+// ---------- render inputs (config tab) ----------
+function renderTypeUI(){
+  document.querySelectorAll('#typeSeg button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.type === state.type);
+  });
+  document.getElementById('typeHint').textContent = state.type === 'pot'
+    ? 'Wins when the accumulated pot falls inside a set burst range.'
+    : 'Wins on a fixed schedule; the pot pays out whatever has accumulated by then.';
+  document.getElementById('lastColHead').textContent = state.type === 'pot'
+    ? 'Days between wins' : 'Payout frequency';
+  renderLevelBlocks();
+}
+
+function renderPeriodUI(){
+  document.querySelectorAll('#periodSeg button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.period === state.period);
+  });
+}
+
+function renderLevelStepper(){
+  document.getElementById('lvlCount').textContent = state.levelCount;
+  document.getElementById('lvlPreview').textContent = activeLevels().map(l=>l.name).join(' · ');
+  document.getElementById('lvlMinus').disabled = state.levelCount <= 1;
+  document.getElementById('lvlPlus').disabled = state.levelCount >= 4;
+}
+
+function renderLevelBlocks(){
+  const wrap = document.getElementById('levelBlocks');
+  wrap.innerHTML = '';
+  activeLevels().forEach(l=>{
+    const d = state.levelData[l.key];
+    const block = document.createElement('div');
+    block.className = 'level-block';
+
+    let extraHTML = '';
+    if (state.type === 'pot'){
+      extraHTML = `
+        <div class="row2">
+          <div>
+            <label style="font-size:11.5px;">Min burst (€)</label>
+            <input type="text" inputmode="decimal" data-level="${l.key}" data-field="minBurst" value="${d.minBurst===''?'':groupThousands(String(d.minBurst))}" placeholder="e.g. 5 000">
+          </div>
+          <div>
+            <label style="font-size:11.5px;">Max burst (€)</label>
+            <input type="text" inputmode="decimal" data-level="${l.key}" data-field="maxBurst" value="${d.maxBurst===''?'':groupThousands(String(d.maxBurst))}" placeholder="e.g. 12 000">
+          </div>
+        </div>`;
+    } else {
+      extraHTML = `
+        <label style="font-size:11.5px;">Payout frequency</label>
+        <select data-level="${l.key}" data-field="freq">
+          ${Object.keys(FREQ_LABEL).map(k=>`<option value="${k}" ${d.freq===k?'selected':''}>${FREQ_LABEL[k]}</option>`).join('')}
+        </select>`;
+    }
+
+    block.innerHTML = `
+      <div class="lname">
+        <span class="tag"><span class="dot" style="background:${l.color}"></span>${l.name}</span>
+        <span class="pctwrap">
+          <input type="number" min="0" max="100" step="0.01" data-level="${l.key}" data-field="pct" value="${d.pct}" placeholder="e.g. 0.5">
+          <span>%</span>
+        </span>
+      </div>
+      <div class="hint" style="margin:-4px 0 10px;">% of each bet contributed to this level</div>
+      <div class="field" style="margin-bottom:12px;">
+        <label style="font-size:11.5px;">Min eligible bet (€) <span style="font-weight:400;color:var(--text-soft);">(optional)</span></label>
+        <input type="text" inputmode="decimal" data-level="${l.key}" data-field="minEligibleBet" value="${d.minEligibleBet===''?'':groupThousands(String(d.minEligibleBet))}" placeholder="e.g. 0.50">
+        <div class="hint">Minimum bet size that qualifies to contribute to this level, if the config uses one.</div>
+      </div>
+      ${extraHTML}
+      <div class="level-error-msg" id="levelError-${l.key}"></div>
+    `;
+    wrap.appendChild(block);
+  });
+
+  wrap.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', onLevelFieldChange);
+  });
+  updateSplitCheck();
+}
+
+function onLevelFieldChange(e){
+  const key = e.target.dataset.level;
+  const field = e.target.dataset.field;
+
+  if (field === 'minBurst' || field === 'maxBurst' || field === 'minEligibleBet'){
+    const formatted = formatMoneyInputWithCaret(e.target);
+    const raw = stripSpaces(formatted);
+    state.levelData[key][field] = raw === '' ? '' : parseFloat(raw);
+    return;
+  }
+
+  let val = e.target.value;
+  if (field !== 'freq') val = val === '' ? '' : parseFloat(val);
+  state.levelData[key][field] = val;
+  if (field === 'pct') updateSplitCheck();
+}
+
+function updateSplitCheck(){
+  const total = activeLevels().reduce((s,l)=> s + (parseFloat(state.levelData[l.key].pct)||0), 0);
+  const el = document.getElementById('splitCheck');
+  const rounded = Math.round(total*100)/100;
+  el.className = 'splitcheck ok';
+  el.textContent = `Total contribution across levels: ${rounded}% of each bet`;
+}
+
+// ---------- events (config tab) ----------
+document.getElementById('typeSeg').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  state.type = b.dataset.type;
+  renderTypeUI();
+});
+document.getElementById('periodSeg').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  state.period = b.dataset.period;
+  renderPeriodUI();
+});
+document.getElementById('lvlPlus').addEventListener('click', ()=>{
+  if (state.levelCount < 4){ state.levelCount++; renderLevelStepper(); renderLevelBlocks(); }
+});
+document.getElementById('lvlMinus').addEventListener('click', ()=>{
+  if (state.levelCount > 1){ state.levelCount--; renderLevelStepper(); renderLevelBlocks(); }
+});
+document.getElementById('calcBtn').addEventListener('click', calculate);
+
+// Clear the red error state on a field as soon as the user edits it
+document.querySelector('.app').addEventListener('input', e=>{
+  if (e.target.matches('input,select')) e.target.classList.remove('input-error');
+});
+
+// ---------- calculation (config tab) ----------
+
+function clearFieldErrors(){
+  document.querySelectorAll('#panel-config .input-error').forEach(el=>el.classList.remove('input-error'));
+  document.querySelectorAll('#panel-config .field-error-msg, #panel-config .level-error-msg').forEach(el=>el.classList.remove('show'));
+}
+
+function validateInputs(){
+  clearFieldErrors();
+  let valid = true;
+
+  const betAmountEl = document.getElementById('betAmount');
+  const betAmountRaw = parseFloat(stripSpaces(betAmountEl.value));
+  if (!betAmountRaw || betAmountRaw <= 0){
+    betAmountEl.classList.add('input-error');
+    document.getElementById('betAmountError').classList.add('show');
+    valid = false;
+  }
+
+  const avgGGREl = document.getElementById('avgGGR');
+  const avgGGR = parseFloat(stripSpaces(avgGGREl.value));
+  if (!avgGGR || avgGGR <= 0){
+    avgGGREl.classList.add('input-error');
+    document.getElementById('avgGGRError').classList.add('show');
+    valid = false;
+  }
+
+  activeLevels().forEach(l=>{
+    const d = state.levelData[l.key];
+    const pctInput = document.querySelector(`input[data-level="${l.key}"][data-field="pct"]`);
+    const errEl = document.getElementById('levelError-'+l.key);
+    const msgs = [];
+
+    const pct = parseFloat(d.pct);
+    if (!pct || pct <= 0){
+      pctInput.classList.add('input-error');
+      msgs.push('contribution % is required');
+      valid = false;
+    }
+
+    if (state.type === 'pot'){
+      const minInput = document.querySelector(`input[data-level="${l.key}"][data-field="minBurst"]`);
+      const maxInput = document.querySelector(`input[data-level="${l.key}"][data-field="maxBurst"]`);
+      const min = parseFloat(d.minBurst), max = parseFloat(d.maxBurst);
+      const hasMin = min > 0, hasMax = max > 0;
+      if (!hasMin){ minInput.classList.add('input-error'); msgs.push('min burst is required'); valid = false; }
+      if (!hasMax){ maxInput.classList.add('input-error'); msgs.push('max burst is required'); valid = false; }
+      if (hasMin && hasMax && max < min){
+        minInput.classList.add('input-error'); maxInput.classList.add('input-error');
+        msgs.push('max burst must be greater than or equal to min burst');
+        valid = false;
+      }
+    }
+
+    if (msgs.length){
+      errEl.textContent = msgs.join(', ') + '.';
+      errEl.classList.add('show');
+    }
+  });
+
+  return valid;
+}
+
+function calculate(){
+  if (!validateInputs()) return;
+
+  const betAmountRaw = parseFloat(stripSpaces(document.getElementById('betAmount').value));
+  const avgGGR = parseFloat(stripSpaces(document.getElementById('avgGGR').value));
+  const active = activeLevels();
+  const monthlyBet = state.period === 'daily' ? betAmountRaw * 30 : betAmountRaw;
+
+  const rows = active.map(l=>{
+    const d = state.levelData[l.key];
+    const pct = parseFloat(d.pct) || 0;
+    const monthlyContribution = monthlyBet * (pct/100);
+    const dailyContribution = monthlyContribution/30;
+
+    let avgPayout = NaN, winsPerMonth = NaN, freqLabel = '–';
+
+    if (state.type === 'pot'){
+      const min = parseFloat(d.minBurst), max = parseFloat(d.maxBurst);
+      if (min > 0 && max > 0 && max >= min && dailyContribution > 0){
+        avgPayout = (min+max)/2;
+        const daysBetweenWins = avgPayout / dailyContribution;
+        winsPerMonth = 30 / daysBetweenWins;
+        freqLabel = fmtNum(daysBetweenWins,1) + ' days';
+      }
+    } else {
+      const intervalDays = FREQ_DAYS[d.freq];
+      avgPayout = dailyContribution * intervalDays;
+      winsPerMonth = 30 / intervalDays;
+      freqLabel = FREQ_LABEL[d.freq];
+    }
+
+    return {
+      level:l, pct, monthlyContribution, avgPayout, winsPerMonth, freqLabel,
+      minEligibleBet: parseFloat(d.minEligibleBet)
+    };
+  });
+
+  const totalMonthlyContribution = rows.reduce((s,r)=> s + r.monthlyContribution, 0);
+  renderResults({rows, totalMonthlyContribution, avgGGR});
+}
+
+function renderBarChart(rows){
+  const chart = document.getElementById('barChart');
+  const labels = document.getElementById('barChartLabels');
+  const max = Math.max(...rows.map(r=>r.monthlyContribution), 0.0001);
+
+  chart.innerHTML = rows.map(r=>{
+    const heightPct = Math.max((r.monthlyContribution/max)*100, 2);
+    return `
+      <div class="col">
+        <div class="bar-value">${fmtMoney(r.monthlyContribution)}</div>
+        <div class="bar" style="height:${heightPct}%;background:${r.level.color};"></div>
+      </div>`;
+  }).join('');
+
+  labels.innerHTML = rows.map(r=>`<div class="col">${r.level.name}</div>`).join('');
+}
+
+function renderResults({rows, totalMonthlyContribution, avgGGR}){
+  document.getElementById('resultsEmpty').style.display = 'none';
+  document.getElementById('resultsContent').style.display = 'block';
+
+  document.getElementById('kpiCost').textContent = fmtMoney(totalMonthlyContribution);
+  document.getElementById('kpiCostSub').textContent = 'Funded from jackpot contribution across all levels';
+
+  const totalWins = rows.reduce((s,r)=> s + (isFinite(r.winsPerMonth)?r.winsPerMonth:0), 0);
+  document.getElementById('kpiWins').textContent = fmtNum(Math.round(totalWins),0);
+
+  if (avgGGR && avgGGR > 0){
+    const impact = (totalMonthlyContribution/avgGGR)*100;
+    document.getElementById('kpiImpact').textContent = fmtNum(impact,2) + '%';
+    document.getElementById('kpiImpactSub').textContent = 'of average monthly GGR';
+    document.getElementById('kpiNet').textContent = fmtMoney(avgGGR - totalMonthlyContribution);
+  } else {
+    document.getElementById('kpiImpact').textContent = '–';
+    document.getElementById('kpiImpactSub').textContent = 'Enter average monthly GGR';
+    document.getElementById('kpiNet').textContent = '–';
+  }
+
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = rows.map(r=>`
+    <tr>
+      <td class="lvl"><span class="dot" style="background:${r.level.color}"></span>${r.level.name}</td>
+      <td class="num-cell">${fmtNum(r.pct,2)}%</td>
+      <td class="num-cell">${isFinite(r.minEligibleBet) && r.minEligibleBet>0 ? fmtMoney2(r.minEligibleBet) : '–'}</td>
+      <td class="num-cell">${fmtMoney(r.monthlyContribution)}</td>
+      <td class="num-cell">${isFinite(r.avgPayout) ? fmtMoney(r.avgPayout) : '–'}</td>
+      <td class="num-cell">${isFinite(r.winsPerMonth) ? fmtNum(Math.round(r.winsPerMonth),0) : '–'}</td>
+      <td class="num-cell">${r.freqLabel}</td>
+    </tr>
+  `).join('');
+
+  renderBarChart(rows);
+
+  const noteEl = document.getElementById('modelNote');
+  const eligibleBetNote = `Min eligible bet is captured for reference only and isn't factored into the calculation above — these figures are estimates for business-case purposes, not final numbers.`;
+  if (state.type === 'pot'){
+    noteEl.innerHTML = `<b>Model note:</b> Average payout per level is the midpoint of its burst range. Days between wins = average payout ÷ daily contribution to that level — i.e. how long it takes the pot to refill to a typical burst size at the current bet volume. ${eligibleBetNote}`;
+  } else {
+    noteEl.innerHTML = `<b>Model note:</b> Average payout per level equals the contribution collected over one payout interval (daily contribution × interval length), assuming the full accumulated pot is paid out each cycle. ${eligibleBetNote}`;
+  }
+}
+
+// =====================================================================
+// TAB 2: VOLUME-BASED RECOMMENDATION
+// =====================================================================
+const F_DEFAULTS = {
+  mini:  {weight:40, targetDays:1,  freq:'daily',    exclusivity:0},
+  major: {weight:30, targetDays:7,  freq:'weekly',   exclusivity:0.5},
+  mega:  {weight:20, targetDays:30, freq:'monthly',  exclusivity:1},
+  grand: {weight:10, targetDays:90, freq:'quarterly',exclusivity:2},
+};
+
+let fState = {
+  type:'pot',
+  levelCount:3,
+  levelData:{}
+};
+
+function initFLevelData(){
+  LEVELS.forEach(l=>{
+    fState.levelData[l.key] = fState.levelData[l.key] || Object.assign({}, F_DEFAULTS[l.key]);
+  });
+}
+function fActiveLevels(){ return LEVELS.slice(0, fState.levelCount); }
+
+function renderFTypeUI(){
+  document.querySelectorAll('#fTypeSeg button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.type === fState.type);
+  });
+  document.getElementById('fTypeHint').textContent = fState.type === 'pot'
+    ? 'Recommends a min–max burst range per level from the funding it would receive.'
+    : 'Recommends a payout frequency per level from the funding it would receive.';
+  document.getElementById('fLastColHead').textContent = fState.type === 'pot'
+    ? 'Days between wins' : 'Payout frequency';
+  renderFLevelBlocks();
+}
+
+function renderFLevelStepper(){
+  document.getElementById('fLvlCount').textContent = fState.levelCount;
+  document.getElementById('fLvlPreview').textContent = fActiveLevels().map(l=>l.name).join(' · ');
+  document.getElementById('fLvlMinus').disabled = fState.levelCount <= 1;
+  document.getElementById('fLvlPlus').disabled = fState.levelCount >= 4;
+}
+
+function renderFLevelBlocks(){
+  const wrap = document.getElementById('fLevelBlocks');
+  wrap.innerHTML = '';
+  fActiveLevels().forEach(l=>{
+    const d = fState.levelData[l.key];
+    const block = document.createElement('div');
+    block.className = 'level-block';
+
+    let cadenceHTML = '';
+    if (fState.type === 'pot'){
+      cadenceHTML = `
+        <label style="font-size:11.5px;">Target days between wins</label>
+        <input type="number" min="0.1" step="0.1" data-level="${l.key}" data-field="targetDays" value="${d.targetDays}">`;
+    } else {
+      cadenceHTML = `
+        <label style="font-size:11.5px;">Target payout frequency</label>
+        <select data-level="${l.key}" data-field="freq">
+          ${Object.keys(FREQ_LABEL).map(k=>`<option value="${k}" ${d.freq===k?'selected':''}>${FREQ_LABEL[k]}</option>`).join('')}
+        </select>`;
+    }
+
+    block.innerHTML = `
+      <div class="lname">
+        <span class="tag"><span class="dot" style="background:${l.color}"></span>${l.name}</span>
+        <span class="pctwrap">
+          <input type="number" min="0" step="0.1" data-level="${l.key}" data-field="weight" value="${d.weight}">
+          <span>% share</span>
+        </span>
+      </div>
+      <div class="hint" style="margin:-4px 0 10px;">Share of the total monthly funding budget allocated to this level (auto-normalized)</div>
+      <div class="field" style="margin-bottom:12px;">
+        ${cadenceHTML}
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label style="font-size:11.5px;">Exclusivity target for min eligible bet</label>
+        <select data-level="${l.key}" data-field="exclusivity">
+          <option value="0" ${d.exclusivity==0?'selected':''}>No minimum — open to all bets</option>
+          <option value="0.5" ${d.exclusivity==0.5?'selected':''}>0.5× average bet size</option>
+          <option value="1" ${d.exclusivity==1?'selected':''}>1× average bet size</option>
+          <option value="2" ${d.exclusivity==2?'selected':''}>2× average bet size</option>
+          <option value="3" ${d.exclusivity==3?'selected':''}>3× average bet size</option>
+        </select>
+        <div class="hint">Estimates a suggested min eligible bet as a multiple of the derived average bet size (requires "Avg. bet count per player" above).</div>
+      </div>
+    `;
+    wrap.appendChild(block);
+  });
+
+  wrap.querySelectorAll('input,select').forEach(el=>{
+    el.addEventListener('input', onFLevelFieldChange);
+    el.addEventListener('change', onFLevelFieldChange);
+  });
+  updateFWeightCheck();
+}
+
+function onFLevelFieldChange(e){
+  const key = e.target.dataset.level;
+  const field = e.target.dataset.field;
+  let val = e.target.value;
+  if (field !== 'freq'){ val = val === '' ? '' : parseFloat(val); }
+  fState.levelData[key][field] = val;
+  if (field === 'weight') updateFWeightCheck();
+}
+
+function updateFWeightCheck(){
+  const total = fActiveLevels().reduce((s,l)=> s + (parseFloat(fState.levelData[l.key].weight)||0), 0);
+  const el = document.getElementById('fWeightCheck');
+  el.textContent = total > 0
+    ? `Budget shares total ${fmtNum(total,1)} — automatically normalized to 100% of the funding budget.`
+    : `Enter a budget share for at least one level.`;
+}
+
+// ---------- events (forecast tab) ----------
+document.getElementById('fTypeSeg').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  fState.type = b.dataset.type;
+  renderFTypeUI();
+});
+document.getElementById('fLvlPlus').addEventListener('click', ()=>{
+  if (fState.levelCount < 4){ fState.levelCount++; renderFLevelStepper(); renderFLevelBlocks(); }
+});
+document.getElementById('fLvlMinus').addEventListener('click', ()=>{
+  if (fState.levelCount > 1){ fState.levelCount--; renderFLevelStepper(); renderFLevelBlocks(); }
+});
+document.getElementById('fCalcBtn').addEventListener('click', calculateForecast);
+
+// ---------- calculation (forecast tab) ----------
+
+function clearFFieldErrors(){
+  document.querySelectorAll('#panel-forecast .input-error').forEach(el=>el.classList.remove('input-error'));
+  document.querySelectorAll('#panel-forecast .field-error-msg').forEach(el=>el.classList.remove('show'));
+}
+
+function validateFInputs(){
+  clearFFieldErrors();
+  let valid = true;
+  const checks = [
+    ['fBetAmount','fBetAmountError'],
+    ['fGGR','fGGRError'],
+    ['fPlayers','fPlayersError'],
+  ];
+  checks.forEach(([id,errId])=>{
+    const el = document.getElementById(id);
+    const v = parseFloat(stripSpaces(el.value));
+    if (!v || v<=0){
+      el.classList.add('input-error');
+      document.getElementById(errId).classList.add('show');
+      valid = false;
+    }
+  });
+  return valid;
+}
+
+function calculateForecast(){
+  if (!validateFInputs()) return;
+
+  const M = parseFloat(stripSpaces(document.getElementById('fBetAmount').value));
+  const G = parseFloat(stripSpaces(document.getElementById('fGGR').value));
+  const P = parseFloat(stripSpaces(document.getElementById('fPlayers').value));
+  const avgBetsRaw = document.getElementById('fAvgBets').value;
+  const avgBetsPerPlayer = avgBetsRaw === '' ? null : parseFloat(avgBetsRaw);
+  const avgBetSize = (avgBetsPerPlayer && avgBetsPerPlayer > 0 && P > 0) ? (M/(avgBetsPerPlayer*P)) : null;
+
+  const targetPct = parseFloat(document.getElementById('fTargetPct').value) || 0;
+  const totalBudget = G * (targetPct/100);
+
+  const active = fActiveLevels();
+  const weightSum = active.reduce((s,l)=> s + (parseFloat(fState.levelData[l.key].weight)||0), 0) || 1;
+
+  const rows = active.map(l=>{
+    const d = fState.levelData[l.key];
+    const weight = parseFloat(d.weight) || 0;
+    const share = weight/weightSum;
+    const idealMonthlyContribution = totalBudget * share;
+    const idealContribPct = M > 0 ? (idealMonthlyContribution/M)*100 : 0;
+
+    // The real jackpot config only accepts a contribution rate to 2 decimal places.
+    // Round to what's actually configurable first, then derive funding/payout/burst
+    // from THAT rate — otherwise the recommended burst range wouldn't match what the
+    // level actually pays out once someone types the rounded rate into the real setup.
+    const contribPct = Math.round(idealContribPct * 100) / 100;
+    const rateRoundedToZero = contribPct === 0 && idealContribPct > 0;
+    const monthlyContribution = M * (contribPct/100);
+    const dailyContribution = monthlyContribution/30;
+
+    let avgPayout = NaN, winsPerMonth = NaN, freqLabel = '–', minBurst = NaN, maxBurst = NaN;
+
+    if (fState.type === 'pot'){
+      const targetDays = parseFloat(d.targetDays) || 1;
+      avgPayout = dailyContribution * targetDays;
+      minBurst = avgPayout * 0.8;
+      maxBurst = avgPayout * 1.2;
+      winsPerMonth = dailyContribution > 0 ? 30/targetDays : NaN;
+      freqLabel = fmtNum(targetDays,1) + ' days';
+    } else {
+      const intervalDays = FREQ_DAYS[d.freq] || 30;
+      avgPayout = dailyContribution * intervalDays;
+      winsPerMonth = 30/intervalDays;
+      freqLabel = FREQ_LABEL[d.freq] || '–';
+    }
+
+    const minEligibleBet = avgBetSize !== null ? avgBetSize * (parseFloat(d.exclusivity)||0) : null;
+
+    return {level:l, contribPct, rateRoundedToZero, monthlyContribution, avgPayout, winsPerMonth, freqLabel, minBurst, maxBurst, minEligibleBet, targetDays: d.targetDays};
+  });
+
+  const totalMonthlyContribution = rows.reduce((s,r)=> s + r.monthlyContribution, 0);
+  const totalWins = rows.reduce((s,r)=> s + (isFinite(r.winsPerMonth)?r.winsPerMonth:0), 0);
+  const zeroedLevels = rows.filter(r=>r.rateRoundedToZero).map(r=>r.level.name);
+
+  const u1 = (parseFloat(document.getElementById('fUpliftBetSize').value)||0)/100;
+  const u2 = (parseFloat(document.getElementById('fUpliftBetCount').value)||0)/100;
+  const u3 = (parseFloat(document.getElementById('fUpliftPlayers').value)||0)/100;
+  const newM = M * (1+u1) * (1+u2) * (1+u3);
+  const newG = M > 0 ? G * (newM/M) : G;
+  const incrementalGGR = newG - G;
+  const netImpact = incrementalGGR - totalMonthlyContribution;
+  const roi = totalMonthlyContribution > 0 ? (incrementalGGR/totalMonthlyContribution) : null;
+
+  renderFResults({rows, totalMonthlyContribution, totalWins, M, G, newG, incrementalGGR, netImpact, roi, targetPct, P, avgBetSize, zeroedLevels});
+}
+
+function renderFBarChart(rows){
+  const chart = document.getElementById('fBarChart');
+  const labels = document.getElementById('fBarChartLabels');
+  const max = Math.max(...rows.map(r=>r.monthlyContribution), 0.0001);
+
+  chart.innerHTML = rows.map(r=>{
+    const heightPct = Math.max((r.monthlyContribution/max)*100, 2);
+    return `
+      <div class="col">
+        <div class="bar-value">${fmtMoney(r.monthlyContribution)}</div>
+        <div class="bar" style="height:${heightPct}%;background:${r.level.color};"></div>
+      </div>`;
+  }).join('');
+
+  labels.innerHTML = rows.map(r=>`<div class="col">${r.level.name}</div>`).join('');
+}
+
+function renderFResults(data){
+  const {rows, totalMonthlyContribution, totalWins, M, G, newG, incrementalGGR, netImpact, roi, targetPct, P, avgBetSize, zeroedLevels} = data;
+
+  document.getElementById('fResultsEmpty').style.display = 'none';
+  document.getElementById('fResultsContent').style.display = 'block';
+
+  document.getElementById('fKpiCost').textContent = fmtMoney(totalMonthlyContribution);
+  document.getElementById('fKpiCostSub').textContent = `Targeting ${fmtNum(targetPct,1)}% of GGR, at 2-decimal contribution rates`;
+
+  const contribRate = M > 0 ? (totalMonthlyContribution/M)*100 : 0;
+  document.getElementById('fKpiImpact').textContent = fmtNum(contribRate,3) + '%';
+  document.getElementById('fKpiImpactSub').textContent = 'of total bet amount (turnover-based rate)';
+
+  document.getElementById('fKpiNet').textContent = fmtMoney(G - totalMonthlyContribution);
+
+  const reachPct = P > 0 ? Math.min(100, (totalWins/P)*100) : 0;
+  document.getElementById('fKpiWins').textContent = fmtNum(reachPct,1) + '%';
+  document.getElementById('fKpiReachSub').textContent = `${fmtNum(Math.round(totalWins),0)} est. wins across ${fmtNum(P,0)} forecasted players`;
+
+  document.getElementById('fDerivedBetPerPlayer').textContent = P > 0 ? fmtMoney(M/P) : '–';
+  document.getElementById('fDerivedGGRPerPlayer').textContent = P > 0 ? fmtMoney(G/P) : '–';
+  document.getElementById('fDerivedBetSize').textContent = avgBetSize ? fmtMoney2(avgBetSize) : '–';
+  document.getElementById('fDerivedBetSizeSub').textContent = avgBetSize
+    ? 'Total bet amount ÷ (avg. bet count per player × player count)'
+    : 'Add "Avg. bet count per player / month" to compute this';
+
+  const tbody = document.getElementById('fResultsBody');
+  tbody.innerHTML = rows.map(r=>{
+    const limitCell = fState.type === 'pot'
+      ? (isFinite(r.minBurst) ? `${fmtMoney(r.minBurst)} – ${fmtMoney(r.maxBurst)}` : '–')
+      : '–';
+    const lastCell = fState.type === 'pot'
+      ? (fmtNum(parseFloat(r.targetDays)||0,1) + ' days')
+      : r.freqLabel;
+    return `
+    <tr${r.rateRoundedToZero ? ' style="opacity:0.55;"' : ''}>
+      <td class="lvl"><span class="dot" style="background:${r.level.color}"></span>${r.level.name}</td>
+      <td class="num-cell">${fmtNum(r.contribPct,2)}%</td>
+      <td class="num-cell">${limitCell}</td>
+      <td class="num-cell">${r.minEligibleBet===null || !isFinite(r.minEligibleBet) ? '–' : (r.minEligibleBet>0 ? fmtMoney2(r.minEligibleBet) : 'No minimum')}</td>
+      <td class="num-cell">${fmtMoney(r.monthlyContribution)}</td>
+      <td class="num-cell">${isFinite(r.avgPayout) ? fmtMoney(r.avgPayout) : '–'}</td>
+      <td class="num-cell">${isFinite(r.winsPerMonth) ? fmtNum(Math.round(r.winsPerMonth),0) : '–'}</td>
+      <td class="num-cell">${lastCell}</td>
+    </tr>`;
+  }).join('');
+
+  renderFBarChart(rows);
+
+  document.getElementById('fUpBaseGGR').textContent = fmtMoney(G);
+  document.getElementById('fUpNewGGR').textContent = fmtMoney(newG);
+  document.getElementById('fUpIncGGR').textContent = fmtMoney(incrementalGGR);
+  document.getElementById('fUpCost').textContent = fmtMoney(totalMonthlyContribution);
+  document.getElementById('fUpNet').textContent = fmtMoney(netImpact);
+  document.getElementById('fUpROI').textContent = roi === null ? '–' : (fmtNum(roi,2) + '×');
+
+  const upliftNote = document.getElementById('fUpliftNote');
+  if (Math.abs(incrementalGGR) < 0.0001){
+    upliftNote.innerHTML = `<b>No uplift assumed.</b> With all uplift assumptions at 0%, this shows the jackpot's pure funding cost with no offsetting gain. Enter uplift assumptions from prior rollouts (bet count, bet size, retention) to estimate the partner's real net impact.`;
+  } else {
+    upliftNote.innerHTML = `<b>Assumption-driven.</b> This projection scales bet volume by the uplift assumptions entered above and holds the GGR margin (GGR ÷ bet amount) constant — it is only as reliable as those assumptions.`;
+  }
+
+  const noteEl = document.getElementById('fModelNote');
+  const eligibleNote = avgBetSize
+    ? `Average bet size used for min-eligible-bet suggestions: ${fmtMoney2(avgBetSize)}.`
+    : `Min-eligible-bet suggestions require "Avg. bet count per player / month" above — add it to enable them.`;
+  const roundingNote = `Contribution is rounded to the 2 decimal places the real jackpot config accepts <i>before</i> funding, avg. payout and burst are derived from it — so the numbers here are what the level would actually pay out once that rounded rate is configured, not the idealized pre-rounding split.`;
+  if (fState.type === 'pot'){
+    noteEl.innerHTML = `<b>Model note:</b> Each level's monthly funding is its normalized share of the total budget (Target % × GGR), rounded to a real 2-decimal contribution rate. Avg. payout = daily contribution (from that rounded rate) × target days between wins; the suggested min–max burst range is ±20% around that payout. ${roundingNote} ${eligibleNote} These are starting points for configuration — sense-check against real player behavior before going live.`;
+  } else {
+    noteEl.innerHTML = `<b>Model note:</b> Each level's monthly funding is its normalized share of the total budget (Target % × GGR), rounded to a real 2-decimal contribution rate. Avg. payout = daily contribution (from that rounded rate) × the selected payout interval. ${roundingNote} ${eligibleNote} These are starting points for configuration — sense-check against real player behavior before going live.`;
+  }
+
+  let zeroCallout = document.getElementById('fZeroLevelsCallout');
+  if (zeroedLevels && zeroedLevels.length){
+    if (!zeroCallout){
+      zeroCallout = document.createElement('div');
+      zeroCallout.id = 'fZeroLevelsCallout';
+      zeroCallout.className = 'callout';
+      noteEl.insertAdjacentElement('beforebegin', zeroCallout);
+    }
+    zeroCallout.style.display = 'block';
+    zeroCallout.innerHTML = `<b>Not achievable at 2 decimals:</b> ${zeroedLevels.join(', ')} level${zeroedLevels.length>1?'s':''} round${zeroedLevels.length>1?'':'s'} down to a 0.00% contribution rate at the current budget split — that level would receive no real funding. Increase its budget share, raise the target cost %, or reduce the level count.`;
+  } else if (zeroCallout){
+    zeroCallout.style.display = 'none';
+  }
+}
+
+// ---------- init ----------
+initLevelData();
+renderTypeUI();
+renderPeriodUI();
+renderLevelStepper();
+attachMoneyFormatting(document.getElementById('betAmount'));
+attachMoneyFormatting(document.getElementById('avgGGR'));
+
+initFLevelData();
+renderFTypeUI();
+renderFLevelStepper();
+attachMoneyFormatting(document.getElementById('fBetAmount'));
+attachMoneyFormatting(document.getElementById('fGGR'));
+attachMoneyFormatting(document.getElementById('fPlayers'));
+</script>
+
+</body>
+</html>
